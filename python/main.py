@@ -6,7 +6,7 @@
 import psycopg2
 
 
-def checkCommandsList(username):
+def checkCommandsList(username, command):
     """
     help
         - lists user commands.
@@ -33,7 +33,35 @@ def checkCommandsList(username):
     follow remove <(u)sername|(e)mail> <NAME>
         - unfollows a user by either email or username.
     """
-    return None
+
+    # mock object
+    dummy_usernames = ["Gabe", "Loser", "Gabe2"]
+    dummy_collections = {"Loser_collection":"Loser", "Winner_collection":"Gabe", "Good_games":"Gabe"}
+    
+    command = command.split()
+    if command[0] == "help":
+        # Print help command!
+    elif command[0] == "login":
+        if len(command) != 2:
+            print("Incorrect usage of login command. Should be login <USERNAME>.")
+            return;
+        if command[1] in dummy_usernames:
+            username = command[1]
+        else:
+            x = input("Type (y)es to create account.")
+            if x == "y" or x == "yes":
+                dummy_usernames.append(command[1])
+    elif username != None:
+        # this doesn't really work without a database, but the general idea exists.
+        if command[0] == "create" and command[1] == "collection":
+            if command[2] in dummy_collections:
+                print("Collection named", command[2], "already exists.")
+                return;
+            dummy_collections[command[2]] = username
+            
+    else:
+        print("User not logged in. Double check spelling of command or login before running commands.")
+        return
 
 
 def main():
