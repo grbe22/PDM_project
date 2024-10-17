@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="starbug.cs.rit.edu" uuid="3bbff594-2c45-44a8-931f-ce3aa34e2450">
+    <data-source source="LOCAL" name="starbug.cs.rit.edu" uuid="94298f96-2243-4504-a376-360e8f990bff">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
+      <remarks>Starbug</remarks>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://127.0.0.1:5432/p320_23</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
