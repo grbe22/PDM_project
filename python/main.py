@@ -4,7 +4,35 @@
     Pings the CS server with commands & expects results.
 """
 import psycopg2
+from sshtunnel import SSHTunnelForwarder
 
+def connectToStarbug():
+    try:
+        with open("login.env") as login: # login.env is gitignored, so it's safe (enough) to put credentials in
+            starbugUsername = login.readline().split()[-1]
+            starbugPassword = login.readline().split()[-1]
+        with SSHTunnelForwarder(('starbug.cs.rit.edu', 22),
+                                ssh_username=starbugUsername,
+                                ssh_password=starbugPassword,
+                                remote_bind_address=('127.0.0.1', 5432)) as server:
+            server.start()
+            print("SSH tunnel established")
+            params = {
+                'database': "p320_23",
+                'user': starbugUsername,
+                'password': starbugPassword,
+                'host': 'localhost',
+                'port': server.local_bind_port
+            }
+
+            conn = psycopg2.connect(**params)
+            curs = conn.cursor()
+            print("Database connection established")
+            
+            return curs, conn
+    except:
+        print("Connection failed")
+    return None, None
 
 def checkCommandsList(username, command):
     """
@@ -41,6 +69,7 @@ def checkCommandsList(username, command):
     command = command.split()
     if command[0] == "help":
         # Print help command!
+        ...
     elif command[0] == "login":
         if len(command) != 2:
             print("Incorrect usage of login command. Should be login <USERNAME>.")
@@ -74,4 +103,7 @@ def main():
 
         
 if __name__ == "__main__":
+    cursor, connection = connectToStarbug()
     main()
+    cursor.close()
+    connection.close()
