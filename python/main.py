@@ -6,6 +6,10 @@
 import psycopg2
 from sshtunnel import SSHTunnelForwarder
 
+global cursor
+global connection
+global user
+
 def connectToStarbug():
     try:
         with open("login.env") as login: # login.env is gitignored, so it's safe (enough) to put credentials in
@@ -25,15 +29,13 @@ def connectToStarbug():
                 'port': server.local_bind_port
             }
 
-            conn = psycopg2.connect(**params)
-            curs = conn.cursor()
+            connection = psycopg2.connect(**params)
+            cursor = connection.cursor()
             print("Database connection established")
 
             # Use curs.execute() to perform SQL queries;
             # use conn.commit() to make any changes permanent;
             # use curs.fetchall() to get the results of a SELECT query;
-            
-            return curs, conn
     except:
         print("Connection failed")
     return None, None
@@ -131,7 +133,6 @@ def checkCommandsList(username, command):
 
 
 def main():
-    cursor, connection = connectToStarbug()
     username = None
     print(  """Welcome to our wondrous database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
@@ -139,7 +140,7 @@ def main():
         command = input()
         if command.lower() == "quit":
             break;
-        checkCommandsList(command)
+        checkCommandsList(user, command)
     cursor.close()
     connection.close()
     print("Goodbye!")
