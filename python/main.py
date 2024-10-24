@@ -171,45 +171,31 @@ def checkCommandsList(username, command):
                 unfollow(command[2], command[3])
             else:
                 follow(command[1], command[2])
-    
-    # if command[0] == "help":
-    #     # Print help command!
-    #     ...
-    # elif command[0] == "login":
-    #     if len(command) != 2:
-    #         print("Incorrect usage of login command. Should be login <USERNAME>.")
-    #         return;
-    #     if command[1] in dummy_usernames:
-    #         username = command[1]
-    #     else:
-    #         x = input("Type (y)es to create account.")
-    #         if x == "y" or x == "yes":
-    #             dummy_usernames.append(command[1])
-    # elif username != None:
-    #     # this doesn't really work without a database, but the general idea exists.
-    #     if command[0] == "create" and command[1] == "collection":
-    #         if command[2] in dummy_collections:
-    #             print("Collection named", command[2], "already exists.")
-    #             return;
-    #         dummy_collections[command[2]] = username
         case _:
             print("User may not be logged in. Double check spelling of command or login before running other commands.")
     return
 
 
 def main():
-    username = None
     connectToStarbug()
     print(  """Welcome to our wondrous database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
-    while True:
-        command = input()
-        if command.lower() == "quit":
-            break;
-        checkCommandsList(user, command)
-    cursor.close()
-    connection.close()
-    server.close()
+    try:
+        while True:
+            command = input()
+            if command.lower() == "quit":
+                break
+            checkCommandsList(user, command)
+    except Exception as e:
+        # fail cleanly
+        cursor.close()
+        connection.close()
+        server.close()
+        raise e
+    else:
+        cursor.close()
+        connection.close()
+        server.close()
     print("Goodbye!")
         
 if __name__ == "__main__":
