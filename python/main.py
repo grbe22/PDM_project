@@ -146,7 +146,7 @@ def checkCommandsList(username, command):
 
 
 def main(cursor, connection):
-    print(  """Welcome to our wondrous database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
+    print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
     try:
         while True:
@@ -194,7 +194,7 @@ def connectToStarbug():
     # Use cursor.execute() to perform SQL queries;
     # use connection.commit() to make any changes permanent;
     # use cursor.fetchall() to get the results of a SELECT query;
-    #except:
+    # except:
     #    print("Connection failed")
 
         
