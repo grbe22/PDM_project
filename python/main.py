@@ -9,45 +9,47 @@ import argparse
 
 user:str = None
 server:SSHTunnelForwarder = None
+cursor = None
+connection = None
 
-def login(username):
+def login(connection, cursor, username):
     ...
 
-def logout(username):
+def logout(connection, cursor, username):
     ...
 
-def create_collection(username, name, games):
+def create_collection(connection, cursor, username, name, games):
     ...
 
-def view_collection(username):
+def view_collection(connection, cursor, username):
     ...
 
-def find_game(args): # boy thats a lot of args
+def find_game(connection, cursor, args): # boy thats a lot of args
     ...
 
-def update_collection(isAdd, collection, game):
+def update_collection(connection, cursor, isAdd, collection, game):
     ...
 
-def update_collection_name(oldName, newName):
+def update_collection_name(connection, cursor, oldName, newName):
     ...
 
-def rate(username, gamename, rating):
+def rate(connection, cursor, username, gamename, rating):
     ...
 
-def play(username, game, start, end):
+def play(connection, cursor, username, game, start, end):
     ...
 
-def follow(follower, followee):
+def follow(connection, cursor, follower, followee):
     cursor.execute(f"""
         INSERT INTO following(follower_id, following_id) VALUES 
             ((SELECT user_id FROM users WHERE name={follower}), (SELECT user_id FROM users WHERE name={followee}))
     """)
     connection.commit()
 
-def unfollow(follower, followee):
+def unfollow(connection, cursor, follower, followee):
     ...
 
-def checkCommandsList(username, command):
+def checkCommandsList(connection, cursor, username, command):
     """
     help
         - lists user commands.
@@ -109,37 +111,37 @@ def checkCommandsList(username, command):
                     - unfollows a user by either email or username.
                 """)
         case "login":
-            login(command[1])
+            login(connection, cursor, command[1])
         case "logout":
-            logout(command[1])
+            logout(connection, cursor, command[1])
         case "create":
             match (command[1]):
                 case "collection":
-                    create_collection(user, command[2], command[3::])
+                    create_collection(connection, cursor, user, command[2], command[3::])
         case "view":
             match (command[1]):
                 case "collection":
-                    view_collection(user)
+                    view_collection(connection, cursor, user)
         case "find":
             match (command[1]):
                 case "game":
-                    find_game(command[2::])
+                    find_game(connection, cursor, command[2::])
         case "update":
             match (command[1]):
                 case "collection":
                     if (command[2] == "name"):
-                        update_collection_name(command[3], command[4])
+                        update_collection_name(connection, cursor, command[3], command[4])
                     else:
-                        update_collection(command[2], command[3], command[4])
+                        update_collection(connection, cursor, command[2], command[3], command[4])
         case "rate":
-            rate(user, command[1], command[2])
+            rate(connection, cursor, user, command[1], command[2])
         case "play":
-            play(user, command[1], command[2], command[3])
+            play(connection, cursor, user, command[1], command[2], command[3])
         case "follow":
             if (command[1] == "remove"):
-                unfollow(command[2], command[3])
+                unfollow(connection, cursor, command[2], command[3])
             else:
-                follow(command[1], command[2])
+                follow(connection, cursor, command[1], command[2])
         case _:
             print("User may not be logged in. Double check spelling of command or login before running other commands.")
     return
@@ -153,7 +155,7 @@ def main(cursor, connection):
             command = input()
             if command.lower() == "quit":
                 break
-            checkCommandsList(user, command)
+            checkCommandsList(connection, cursor, user, command)
     except Exception as e:
         # fail cleanly
         cursor.close()
@@ -168,7 +170,6 @@ def main(cursor, connection):
 
 
 def connectToStarbug():
-    #try:
     with open("login.env") as login: # login.env is gitignored, so it's safe (enough) to put credentials in
         starbugUsername = login.readline().split()[-1]
         starbugPassword = login.readline().split()[-1]
@@ -194,10 +195,7 @@ def connectToStarbug():
     # Use cursor.execute() to perform SQL queries;
     # use connection.commit() to make any changes permanent;
     # use cursor.fetchall() to get the results of a SELECT query;
-    #except:
-    #    print("Connection failed")
 
         
 if __name__ == "__main__":
     connectToStarbug()
-    
