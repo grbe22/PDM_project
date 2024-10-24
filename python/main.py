@@ -7,39 +7,8 @@ import psycopg2
 from sshtunnel import SSHTunnelForwarder
 import argparse
 
-cursor:psycopg2._T_conn._T_cur = None
-connection:psycopg2._T_conn = None
 user:str = None
 server:SSHTunnelForwarder = None
-
-def connectToStarbug():
-    try:
-        with open("login.env") as login: # login.env is gitignored, so it's safe (enough) to put credentials in
-            starbugUsername = login.readline().split()[-1]
-            starbugPassword = login.readline().split()[-1]
-        server = SSHTunnelForwarder(('starbug.cs.rit.edu', 22),
-                                ssh_username=starbugUsername,
-                                ssh_password=starbugPassword,
-                                remote_bind_address=('127.0.0.1', 5432))
-        server.start()
-        print("SSH tunnel established")
-        params = {
-            'database': "p320_23",
-            'user': starbugUsername,
-            'password': starbugPassword,
-            'host': 'localhost',
-            'port': server.local_bind_port
-        }
-
-        connection = psycopg2.connect(**params)
-        cursor = connection.cursor()
-        print("Database connection established")
-
-        # Use cursor.execute() to perform SQL queries;
-        # use connection.commit() to make any changes permanent;
-        # use cursor.fetchall() to get the results of a SELECT query;
-    except:
-        print("Connection failed")
 
 def login(username):
     ...
@@ -176,8 +145,7 @@ def checkCommandsList(username, command):
     return
 
 
-def main():
-    connectToStarbug()
+def main(cursor, connection):
     print(  """Welcome to our wondrous database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
     try:
@@ -197,7 +165,39 @@ def main():
         connection.close()
         server.close()
     print("Goodbye!")
+
+
+def connectToStarbug():
+    #try:
+    with open("login.env") as login: # login.env is gitignored, so it's safe (enough) to put credentials in
+        starbugUsername = login.readline().split()[-1]
+        starbugPassword = login.readline().split()[-1]
+    server = SSHTunnelForwarder(('starbug.cs.rit.edu', 22),
+                            ssh_username=starbugUsername,
+                            ssh_password=starbugPassword,
+                            remote_bind_address=('127.0.0.1', 5432))
+    server.start()
+    print("SSH tunnel established")
+    params = {
+        'database': "p320_23",
+        'user': starbugUsername,
+        'password': starbugPassword,
+        'host': 'localhost',
+        'port': server.local_bind_port
+    }
+
+    connection = psycopg2.connect(**params)
+    cursor = connection.cursor()
+    
+    print("Database connection established")
+    main(cursor, connection)
+    # Use cursor.execute() to perform SQL queries;
+    # use connection.commit() to make any changes permanent;
+    # use cursor.fetchall() to get the results of a SELECT query;
+    #except:
+    #    print("Connection failed")
+
         
 if __name__ == "__main__":
-    main()
+    connectToStarbug()
     
