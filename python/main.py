@@ -28,11 +28,48 @@ def connectToStarbug():
             conn = psycopg2.connect(**params)
             curs = conn.cursor()
             print("Database connection established")
+
+            # Use curs.execute() to perform SQL queries;
+            # use conn.commit() to make any changes permanent;
+            # use curs.fetchall() to get the results of a SELECT query;
             
             return curs, conn
     except:
         print("Connection failed")
     return None, None
+
+def login(username):
+    ...
+
+def logout(username):
+    ...
+
+def create_collection(username, name, games):
+    ...
+
+def view_collection(username):
+    ...
+
+def find_game(args): # boy thats a lot of args
+    ...
+
+def update_collection(isAdd, collection, game):
+    ...
+
+def update_collection_name(oldName, newName):
+    ...
+
+def rate(username, gamename, rating):
+    ...
+
+def play(username, game, start, end):
+    ...
+
+def follow(follower, followee):
+    ...
+
+def unfollow(follower, followee):
+    ...
 
 def checkCommandsList(username, command):
     """
