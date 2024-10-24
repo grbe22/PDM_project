@@ -131,16 +131,19 @@ def checkCommandsList(username, command):
 
 
 def main():
+    cursor, connection = connectToStarbug()
     username = None
     print(  """Welcome to our wondrous database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
-    command = input().split()
-    if len(command) != 2 or (command[0] != "l" and command[0] != "login"):
-        print("Oh,,,,, you idiot..... I gave you ONE COMMAND. YOU NEED to sign in first! Use l or login, then your username! No spaces in username!")
-
-        
-if __name__ == "__main__":
-    cursor, connection = connectToStarbug()
-    main()
+    while True:
+        command = input()
+        if command.lower() == "quit":
+            break;
+        checkCommandsList(command)
     cursor.close()
     connection.close()
+    print("Goodbye!")
+        
+if __name__ == "__main__":
+    main()
+    
