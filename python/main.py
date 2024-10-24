@@ -6,33 +6,41 @@
 import psycopg2
 from sshtunnel import SSHTunnelForwarder
 
-def connectToStarbug():
-    try:
-        with open("login.env") as login: # login.env is gitignored, so it's safe (enough) to put credentials in
-            starbugUsername = login.readline().split()[-1]
-            starbugPassword = login.readline().split()[-1]
-        with SSHTunnelForwarder(('starbug.cs.rit.edu', 22),
-                                ssh_username=starbugUsername,
-                                ssh_password=starbugPassword,
-                                remote_bind_address=('127.0.0.1', 5432)) as server:
-            server.start()
-            print("SSH tunnel established")
-            params = {
-                'database': "p320_23",
-                'user': starbugUsername,
-                'password': starbugPassword,
-                'host': 'localhost',
-                'port': server.local_bind_port
-            }
+conn = None
+curs = None
 
-            conn = psycopg2.connect(**params)
-            curs = conn.cursor()
-            print("Database connection established")
-            
-            return curs, conn
-    except:
-        print("Connection failed")
-    return None, None
+
+# cursor, connection
+def main(curs, conn):
+    print(curs.execute("select * from p320_23.user;"))  
+
+
+try:
+    with open("login.env") as login: # login.env is gitignored, so it's safe (enough) to put credentials in
+        starbugUsername = login.readline().split()[-1]
+        starbugPassword = login.readline().split()[-1]
+    with SSHTunnelForwarder(('starbug.cs.rit.edu', 22),
+                            ssh_username=starbugUsername,
+                            ssh_password=starbugPassword,
+                            remote_bind_address=('127.0.0.1', 5432)) as server:
+        server.start()
+        print("SSH tunnel established")
+        params = {
+            'database': "p320_23",
+            'user': starbugUsername,
+            'password': starbugPassword,
+            'host': 'localhost',
+            'port': server.local_bind_port
+        }
+
+        conn = psycopg2.connect(**params)
+        curs = conn.cursor()
+        print("Database connection established")
+        main(curs, conn)
+        
+except:
+    print("Connection failed")
+
 
 def checkCommandsList(username, command):
     """
@@ -91,19 +99,3 @@ def checkCommandsList(username, command):
     else:
         print("User not logged in. Double check spelling of command or login before running commands.")
         return
-
-
-def main():
-    username = None
-    print(  """Welcome to our wondrous database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
-            """)
-    command = input().split()
-    if len(command) != 2 or (command[0] != "l" and command[0] != "login"):
-        print("Oh,,,,, you idiot..... I gave you ONE COMMAND. YOU NEED to sign in first! Use l or login, then your username! No spaces in username!")
-
-        
-if __name__ == "__main__":
-    cursor, connection = connectToStarbug()
-    main()
-    cursor.close()
-    connection.close()
