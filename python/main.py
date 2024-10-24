@@ -41,8 +41,8 @@ def connectToStarbug():
     except:
         print("Connection failed")
 
-def login(username):
-    ...
+def login(username, password):
+
 
 def logout(username):
     ...
