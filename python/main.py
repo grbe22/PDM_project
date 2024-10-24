@@ -148,7 +148,7 @@ def checkCommandsList(connection, cursor, username, command):
 
 
 def main(cursor, connection):
-    print(  """Welcome to our wondrous database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
+    print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
     try:
         while True:
