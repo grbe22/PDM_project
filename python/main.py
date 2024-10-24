@@ -6,9 +6,9 @@
 import psycopg2
 from sshtunnel import SSHTunnelForwarder
 
-global cursor
-global connection
-global user
+cursor:psycopg2._T_conn._T_cur = None
+connection:psycopg2._T_conn = None
+user:str = None
 
 def connectToStarbug():
     try:
@@ -33,9 +33,9 @@ def connectToStarbug():
             cursor = connection.cursor()
             print("Database connection established")
 
-            # Use curs.execute() to perform SQL queries;
-            # use conn.commit() to make any changes permanent;
-            # use curs.fetchall() to get the results of a SELECT query;
+            # Use cursor.execute() to perform SQL queries;
+            # use connection.commit() to make any changes permanent;
+            # use cursor.fetchall() to get the results of a SELECT query;
     except:
         print("Connection failed")
     return None, None
@@ -68,7 +68,11 @@ def play(username, game, start, end):
     ...
 
 def follow(follower, followee):
-    ...
+    cursor.execute(f"""
+        INSERT INTO following(follower_id, following_id) VALUES 
+            ((SELECT user_id FROM users WHERE name={follower}), (SELECT user_id FROM users WHERE name={followee}))
+    """)
+    connection.commit()
 
 def unfollow(follower, followee):
     ...
