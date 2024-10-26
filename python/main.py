@@ -29,7 +29,10 @@ def login(cur, conn, username):
     return feedback
 
 def logout(connection, cursor, username):
-    ...
+    global user
+    global userid
+    user = None
+    userid = None
 
 # Games MUST be a list of game ids.
 def create_collection(conn, cur, name, games):
