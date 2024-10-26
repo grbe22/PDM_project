@@ -18,11 +18,15 @@ connection = None
 # if found, returns the username.
 # todo: return the user_id instead.
 def login(cur, conn, username):
+    global user
+    global userid
     cur.execute(f"""
         SELECT username, user_id from p320_23.user where username = '{username}22';
     """)
     feedback = cur.fetchone()
-    print(feedback)
+    print("User found.")
+    user = feedback[0]
+    userid = feedback[1]
     if feedback == None:
         print("User not found.")
         return None
@@ -139,10 +143,10 @@ def follow(cur, conn, followee):
     conn.commit()
     print(f"Successfully followed {followee}")
 
-
+# gets users by a partial email. It can contain the partial email anywhere in the email string.
 def get_users_by_email(cur, conn, p_email):
     cur.execute(f"""
-        select username, email from p320_23.user where email like '{p_email}%'; 
+        select username, email from p320_23.user where email like '%{p_email}%'; 
     """)
     print("Successfully gathered users.")
     return cur.fetchall()
@@ -272,9 +276,6 @@ def main(cursor, connection):
     userid = 3
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
-    print(get_users_by_email(cursor, connection, "email"))
-    print(get_users_by_email(cursor, connection, "email@g"))
-    print(get_users_by_email(cursor, connection, "email22"))
 
     try:
         while True:
