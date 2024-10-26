@@ -18,7 +18,7 @@ connection = None
 # takes cur, conn, username.
 # if user not found, returns none.
 # if found, returns the username.
-def login(cur, conn, username):
+def login(conn, cur, username):
     global user
     global userid
     cur.execute(f"""
@@ -49,7 +49,7 @@ def login(cur, conn, username):
 # Requires many arguments.
 # in order: username, email, password, first_name, last_name, creation_date, and last_accessed_date.
 # creation and last_accessed_date can be generated in the method.
-def create_account(cur, conn, username, email, password, f_n, l_n):
+def create_account(conn, cur, username, email, password, f_n, l_n):
     cur.execute(f"""
         select * from p320_23.user where username = '{username}'
                 """)
@@ -65,7 +65,7 @@ def create_account(cur, conn, username, email, password, f_n, l_n):
     login(cur, conn, username)
 
 # signs you out :)
-def logout(connection, cursor, username):
+def logout(conn, cur, username):
     global user
     global userid
     user = None
@@ -255,7 +255,7 @@ def play_with_duration(conn, cur, game, time):
 # Takes a follower (the logged in user) and a followee.
 # creates a connection if none exists.
 # prints to console if it was successful or not.
-def follow(cur, conn, followee):
+def follow(conn, cur, followee):
     cur.execute(f"""
         SELECT * from following where
         follower_id = {userid}) and 
@@ -273,7 +273,7 @@ def follow(cur, conn, followee):
     print(f"Successfully followed {followee}")
 
 # gets users by a partial email. It can contain the partial email anywhere in the email string.
-def get_users_by_email(cur, conn, p_email):
+def get_users_by_email(conn, cur, p_email):
     cur.execute(f"""
         select username, email from p320_23.user where email like '%{p_email}%'; 
     """)
@@ -283,7 +283,7 @@ def get_users_by_email(cur, conn, p_email):
 # Takes a follower (the logged in user) and a followee.
 # deletes a connection if it exists.
 # prints to console outcome - successful or not.
-def unfollow(cur, conn, followee):
+def unfollow(conn, cur, followee):
     cur.execute(f"""
         select * from p320_23.following where
         follower_id = ({userid}') and 
@@ -399,8 +399,8 @@ def checkCommandsList(connection, cursor, username, command):
     return
 
 
-def main(cursor, connection):
-    login(cursor, connection, "Axl Rose")
+def main(connection, cursor):
+    login(connection, cursor, "Axl Rose")
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
     try:
@@ -444,7 +444,7 @@ def connectToStarbug():
     cursor = connection.cursor()
     
     print("Database connection established")
-    main(cursor, connection)
+    main(connection, cursor)
     # Use cursor.execute() to perform SQL queries;
     # use connection.commit() to make any changes permanent;
     # use cursor.fetchall() to get the results of a SELECT query;
