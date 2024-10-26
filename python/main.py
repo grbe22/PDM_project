@@ -27,6 +27,9 @@ def login(cur, conn, username):
     print("User found.")
     user = feedback[0]
     userid = feedback[1]
+
+    # updates the user's last-access by updating their 
+
     if feedback == None:
         print("User not found.")
         return None
@@ -66,8 +69,41 @@ def create_collection(conn, cur, name, games):
     # returns the collection id
     return coll_id
 
-def view_collection(connection, cursor, username):
-    ...
+# gets all collections belonging to the current user.
+def get_all_collections(conn, cur):
+    cur.execute(f"""
+        select name, collection_id from p320_23.collection where user_id = {userid}'; 
+    """)
+    print("Successfully gathered collections.")
+    arr = []
+    for i in cur.fetchall:
+        arr.append([i[0], i[1]])
+        # this function also requires all of the games in the list, by name
+        cur.execute(f"""
+            select count(collection_id) in p320_23.collection where collection_id = {i[1]};
+        """)
+        arr.append(cur.fetchone())
+        # todo: and then we need to implement the playtime.
+
+    # arr should have n elements each with 4 values (todo: 3 currently).
+    # in order, for each element, (name, collection_id, game_count, total_playtime)
+    return arr
+
+def delete_collection(conn, cur, collection_name):
+    cur.execute(f"""
+        select * from p320_23.collection where user_id = {userid} and name = '{collection_name}';
+    """)
+    if cur.fetchone() == None:
+        print("Collection does not exist. No changes were made.")
+        return
+    # start by deleting the game_in_collection entries with this id
+    cur.execute(f"""
+        delete from p320_23.game_in_collection where collection_id = (select collection_id from p320_23.collection where user_id = {userid} and name = '{collection_name}');
+    """)
+    cur.execute(f"""
+        delete from p320_23.collection where user_id = {userid} and name = '{collection_name}';
+    """)
+    print(f"Succesfully deleted collection {collection_name}.")
 
 def find_game(connection, cursor, args): # boy thats a lot of args
     ...
