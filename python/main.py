@@ -6,7 +6,7 @@
 import psycopg2
 from sshtunnel import SSHTunnelForwarder
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 
 user:str = None
 userid:int = None
@@ -217,8 +217,28 @@ def rate(conn, cur, gamename, rating):
         conn.commit()
         print("New rating created.")
 
-def play(connection, cursor, username, game, start, end):
-    ...
+# start and end are datetime objects
+# game is assumedly a name
+def play(conn, cur, game, start, end):
+    cur.execute(f"""
+        select game_id from p320_23.game where title = '{game}'
+    """)
+    g_id = cur.fetchone()[0]
+    if g_id == None:
+        print("Game not found.")
+        return
+    
+    # adds a playsession to the list.
+    cur.execute(f"""
+        insert into p320_23.playtime(user_id, game_id, start_time, end_time)
+        values ({userid}, {g_id}, '{start}', '{end}');
+    """)
+    conn.commit()
+    print("Logged playtime.")
+
+# calls play with end being now, and the beginning being time minutes away.
+def play_with_duration(conn, cur, game, time):
+    play(conn, cur, game, datetime.now() - timedelta(minutes = time), datetime.now())
 
 # Takes a follower (the logged in user) and a followee.
 # creates a connection if none exists.
@@ -371,6 +391,7 @@ def main(cursor, connection):
     login(cursor, connection, "Axl Rose")
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
+    play_with_duration(connection, cursor, "Minecraft", 89)
     try:
         while True:
             command = input()
