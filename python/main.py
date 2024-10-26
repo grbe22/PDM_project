@@ -7,6 +7,7 @@ import psycopg2
 from sshtunnel import SSHTunnelForwarder
 import argparse
 from datetime import datetime, timedelta
+import numpy as np
 
 user:str = None
 userid:int = None
@@ -106,6 +107,7 @@ def get_all_collections(conn, cur):
     """)
     print("Successfully gathered collections.")
     arr = []
+    game_ids = []
     for i in cur.fetchall():
         arr.append([i[0], i[1]])
         # this function also requires all of the games in the list, by name
@@ -113,8 +115,18 @@ def get_all_collections(conn, cur):
             select count(game_id) from p320_23.game_in_collection where collection_id = {i[1]};
         """)
         arr[-1].append(cur.fetchone()[0])
-        # todo: and then we need to implement the playtime.
-
+    for i in range(0, len(arr)):
+        cur.execute(f"""
+            select sum(end_time - start_time) from p320_23.playtime where user_id = {userid} and game_id in
+            (select game_id from p320_23.game_in_collection where collection_id = {arr[i][1]});
+        """)
+        elapsed_time = np.sum(cur.fetchall())
+        print(elapsed_time)
+        hours, remainder = divmod(elapsed_time.total_seconds(), 3600)
+        minutes = remainder // 60
+        for i in range(0, len(arr)):
+            arr[i].pop(1)
+        arr[i].append(str(int(hours)) + ":" + str(int(minutes)))
     # arr should have n elements each with 4 values (todo: 3 currently).
     # in order, for each element, (name, collection_id, game_count, total_playtime)
     return arr
@@ -391,7 +403,6 @@ def main(cursor, connection):
     login(cursor, connection, "Axl Rose")
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
-    play_with_duration(connection, cursor, "Minecraft", 89)
     try:
         while True:
             command = input()
