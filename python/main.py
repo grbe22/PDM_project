@@ -10,8 +10,18 @@ import argparse
 user:str = None
 server:SSHTunnelForwarder = None
 
-def login(username):
-    ...
+# takes cur, conn, username.
+#
+def login(cur, conn, username):
+    cur.execute(f"""
+        SELECT * from p320_23.user where username = '{username}22';
+    """)
+    feedback = cur.fetchone()
+    print(feedback)
+    if feedback == None:
+        print("User not found.")
+        return None
+    return feedback
 
 def logout(username):
     ...
@@ -37,15 +47,46 @@ def rate(username, gamename, rating):
 def play(username, game, start, end):
     ...
 
-def follow(follower, followee):
-    cursor.execute(f"""
-        INSERT INTO following(follower_id, following_id) VALUES 
-            ((SELECT user_id FROM users WHERE name={follower}), (SELECT user_id FROM users WHERE name={followee}))
+# Takes a follower (the logged in user) and a followee.
+# creates a connection if none exists.
+# prints to console if it was successful or not.
+def follow(cur, conn, follower, followee):
+    cur.execute(f"""
+        SELECT * from following where
+        follower_id = (select user_id from p320_23.user where username = '{follower}') and 
+        following_id = (select user_id from p320_23.user where username = '{followee}');
     """)
-    connection.commit()
+    if cur.fetchone() != None:
+        print(f"You are already following {followee}.")
+        return;
+    cur.execute(f"""
+        INSERT INTO following(follower_id, following_id) VALUES 
+            ((SELECT user_id FROM p320_23.user WHERE username='{follower}'), 
+            (SELECT user_id FROM p320_23.user WHERE username='{followee}'));
+    """)
+    conn.commit()
+    print(f"Successfully followed {followee}")
 
-def unfollow(follower, followee):
-    ...
+
+# Takes a follower (the logged in user) and a followee.
+# deletes a connection if it exists.
+# prints to console outcome - successful or not.
+def unfollow(cur, conn, follower, followee):
+    cur.execute(f"""
+        select * from p320_23.following where
+        follower_id = (select user_id from p320_23.user where username = '{follower}') and 
+        following_id = (select user_id from p320_23.user where username = '{followee}');
+    """)
+    if cur.fetchone() == None:
+        print(f"No changes were made. You were not already following {followee}.")
+        return
+    cur.execute(f""" 
+        delete from p320_23.following where 
+        follower_id = (select user_id from p320_23.user where username = '{follower}') and
+        following_id = (select user_id from p320_23.user where username = '{followee}');
+    """)
+    conn.commit()
+    print(f"Successfully unfollowed {followee}")
 
 def checkCommandsList(username, command):
     """
