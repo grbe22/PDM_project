@@ -184,8 +184,34 @@ def update_collection_name(conn, cur, oldName, newName):
     conn.commit()
     print(f"Sucessfully renamed collection {oldName} into {newName}")
 
-def rate(connection, cursor, username, gamename, rating):
-    ...
+# takes the userid, finds the gameid, and posts a rating (if rating in 1, 2, 3, 4, 5).
+# updates ratings where they already exist.
+def rate(conn, cur, gamename, rating):
+    if not(rating in [1, 2, 3, 4, 5]):
+        print("Invalid rating value.")
+        return
+    cur.execute(f"""
+        select game_id from p320_23.game where title = '{gamename}';
+    """)
+    g_id = cur.fetchone()[0]
+    if g_id == None:
+        print("Game not found.")
+        return
+    cur.execute(f"""
+        select * from p320_23.rating where user_id = {userid} and game_id = {g_id};
+    """)
+    if cur.fetchone() != None:
+        cur.execute(f"""
+            update p320_23.rating set rating = {rating} where game_id = {g_id} and user_id = {userid};
+        """)
+        conn.commit()
+        print("Updated rating.")
+    else:
+        cur.execute(f"""
+            insert into p320_23.rating(user_id, game_id, rating) values ({userid}, {g_id}, {rating});
+        """)
+        conn.commit()
+        print("New rating created.")
 
 def play(connection, cursor, username, game, start, end):
     ...
@@ -340,6 +366,8 @@ def main(cursor, connection):
     login(cursor, connection, "Axl Rose")
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
+    rate(connection, cursor, "Minecraft", 3)
+    rate(connection, cursor, "Fortnite", 1)
     try:
         while True:
             command = input()
