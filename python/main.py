@@ -63,6 +63,7 @@ def create_account(cur, conn, username, email, password, f_n, l_n):
     conn.commit()
     login(cur, conn, username)
 
+# signs you out :)
 def logout(connection, cursor, username):
     global user
     global userid
@@ -139,6 +140,7 @@ def delete_collection(conn, cur, collection_name):
 def find_game(connection, cursor, args): # boy thats a lot of args
     ...
 
+# isAdd - if True, adds a new game. If False, do not... do that. Remove it.
 def update_collection(conn, cur, isAdd, cid, game):
     if isAdd:
         cur.execute(f"""
@@ -165,6 +167,8 @@ def update_collection(conn, cur, isAdd, cid, game):
             conn.commit()
             print(f"Successfully removed game {game} from collection {cid}.")
 
+# if a collection exists, rename it.
+# otherwise, reject.
 def update_collection_name(conn, cur, oldName, newName):
     cur.execute(f"""
         select * from p320_23.collection where name = '{oldName}' and user_id = {userid};
@@ -263,6 +267,7 @@ def unfollow(cur, conn, followee):
     """)
     conn.commit()
     print(f"Successfully unfollowed {followee}")
+
 
 def checkCommandsList(connection, cursor, username, command):
     """
@@ -366,8 +371,6 @@ def main(cursor, connection):
     login(cursor, connection, "Axl Rose")
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
-    rate(connection, cursor, "Minecraft", 3)
-    rate(connection, cursor, "Fortnite", 1)
     try:
         while True:
             command = input()
