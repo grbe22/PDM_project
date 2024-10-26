@@ -51,8 +51,8 @@ def create_collection(conn, cur, name, games):
     cur.execute(f"""
         select collection_id from p320_23.collection where name = '{name}' and user_id = {userid};
     """)
-    coll_id = cur.fetchone()
-
+    coll_id = cur.fetchone()[0]
+    print(f"Collection {name} created for {user} with new id {coll_id}.")
     # adds each game, one by one, to the game_in_collection list.
     for i in games:
         update_collection(conn, cur, True, coll_id, i)
@@ -63,8 +63,31 @@ def view_collection(connection, cursor, username):
 def find_game(connection, cursor, args): # boy thats a lot of args
     ...
 
-def update_collection(connection, cursor, isAdd, collection, game):
-    ...
+def update_collection(conn, cur, isAdd, cid, game):
+    if isAdd:
+        cur.execute(f"""
+            select game_id from p320_23.game_in_collection where collection_id = {cid} and game_id = {game};
+        """)
+        if cur.fetchone() != None:
+            print("Game with ID {game} already exists in collection with ID {collection}.")
+            return
+        cur.execute(f"""
+            insert into p320_23.game_in_collection (game_id, collection_id) values ({game}, {cid});
+        """)
+        conn.commit()
+        print(f"Game with id {game} successfully inserted into collection with id {cid}")
+    else:
+        cur.execute(f"""
+            select * from p320_23.game_in_collection where collection_id = {cid} and game_id = {game};
+        """)
+        if cur.fetchone() == None:
+            print(f"Game with id {game} does not exist in collection with ID {cid}.")
+        else:
+            cur.execute(f"""
+                delete from p320_23.game_in_collection where collection_id = {cid} and game_id = {game};
+            """)
+            conn.commit()
+            print(f"Successfully removed game {game} from collection {cid}.")
 
 def update_collection_name(connection, cursor, oldName, newName):
     ...
@@ -219,7 +242,7 @@ def main(cursor, connection):
     global userid
     user = "Axl Rose"
     userid = 3
-    create_collection(connection, cursor, "Men", [])
+    create_collection(connection, cursor, "Men", [2, 1])
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
     try:
