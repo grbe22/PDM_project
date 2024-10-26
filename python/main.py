@@ -6,6 +6,7 @@
 import psycopg2
 from sshtunnel import SSHTunnelForwarder
 import argparse
+from datetime import datetime
 
 user:str = None
 userid:int = None
@@ -16,24 +17,51 @@ connection = None
 # takes cur, conn, username.
 # if user not found, returns none.
 # if found, returns the username.
-# todo: return the user_id instead.
 def login(cur, conn, username):
     global user
     global userid
     cur.execute(f"""
-        SELECT username, user_id from p320_23.user where username = '{username}22';
+        SELECT username, user_id from p320_23.user where username = '{username}';
     """)
     feedback = cur.fetchone()
+    if feedback == None:
+        print("No user was found with that name.")
+        return
     print("User found.")
     user = feedback[0]
     userid = feedback[1]
 
-    # updates the user's last-access by updating their 
+    # updates the user's last-access by updating their last_access_time to datetime.now().
+    now = datetime.now()
+    cur.execute(f""" 
+        update p320_23.user
+        set last_access_time = '{now}'
+        where user_id = {userid};
+    """)
+    conn.commit()
 
     if feedback == None:
         print("User not found.")
         return None
     return feedback
+
+# Requires many arguments.
+# in order: username, email, password, first_name, last_name, creation_date, and last_accessed_date.
+# creation and last_accessed_date can be generated in the method.
+def create_account(cur, conn, username, email, password, f_n, l_n):
+    cur.execute(f"""
+        select * from p320_23.user where username = '{username}'
+                """)
+    if cur.fetchone() != None:
+        print(f"User {username} already exists.")
+        return
+    now = datetime.now()
+    cur.execute(f"""
+        insert into p320_23.user(username, email, password, first_name, last_name, creation_date, last_access_time) values
+                                ('{username}', '{email}', '{password}', '{f_n}', '{l_n}', '{now}', '{now}')
+                """)
+    conn.commit()
+    login(cur, conn, username)
 
 def logout(connection, cursor, username):
     global user
@@ -309,14 +337,9 @@ def checkCommandsList(connection, cursor, username, command):
 
 
 def main(cursor, connection):
-    global user
-    global userid
-    user = "Axl Rose"
-    userid = 3
+    login(cursor, connection, "Axl Rose")
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
-    create_collection(connection, cursor, "Men", [2, 1])
-    delete_collection(connection, cursor, "Men")
     try:
         while True:
             command = input()
