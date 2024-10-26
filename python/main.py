@@ -56,6 +56,8 @@ def create_collection(conn, cur, name, games):
     # adds each game, one by one, to the game_in_collection list.
     for i in games:
         update_collection(conn, cur, True, coll_id, i)
+    # returns the collection id
+    return coll_id
 
 def view_collection(connection, cursor, username):
     ...
@@ -69,7 +71,7 @@ def update_collection(conn, cur, isAdd, cid, game):
             select game_id from p320_23.game_in_collection where collection_id = {cid} and game_id = {game};
         """)
         if cur.fetchone() != None:
-            print("Game with ID {game} already exists in collection with ID {collection}.")
+            print(f"Game with ID {game} already exists in collection with ID {cid}.")
             return
         cur.execute(f"""
             insert into p320_23.game_in_collection (game_id, collection_id) values ({game}, {cid});
@@ -242,7 +244,6 @@ def main(cursor, connection):
     global userid
     user = "Axl Rose"
     userid = 3
-    create_collection(connection, cursor, "Men", [2, 1])
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
     try:
