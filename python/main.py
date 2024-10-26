@@ -70,6 +70,7 @@ def create_collection(conn, cur, name, games):
     return coll_id
 
 # gets all collections belonging to the current user.
+# todo: Test.
 def get_all_collections(conn, cur):
     cur.execute(f"""
         select name, collection_id from p320_23.collection where user_id = {userid}'; 
@@ -89,6 +90,8 @@ def get_all_collections(conn, cur):
     # in order, for each element, (name, collection_id, game_count, total_playtime)
     return arr
 
+# deletes all dependencies of this collection, then the collection itself.
+# todo: Test.
 def delete_collection(conn, cur, collection_name):
     cur.execute(f"""
         select * from p320_23.collection where user_id = {userid} and name = '{collection_name}';
