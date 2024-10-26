@@ -94,8 +94,24 @@ def update_collection(conn, cur, isAdd, cid, game):
             conn.commit()
             print(f"Successfully removed game {game} from collection {cid}.")
 
-def update_collection_name(connection, cursor, oldName, newName):
-    ...
+def update_collection_name(conn, cur, oldName, newName):
+    cur.execute(f"""
+        select * from p320_23.collection where name = '{oldName}' and user_id = {userid};
+    """)
+    if cur.fetchone() == None:
+        print("No collection was found with that name.")
+        return
+    cur.execute(f"""
+        select * from p320_23.collection where name = '{newName}' and user_id = {userid};
+    """)
+    if cur.fetchone() != None:
+        print(f"Collection with new name {newName} already exists.")
+        return
+    cur.execute(f"""
+        update p320_23.collection set name = '{newName}';
+    """)
+    conn.commit()
+    print(f"Sucessfully renamed collection {oldName} into {newName}")
 
 def rate(connection, cursor, username, gamename, rating):
     ...
@@ -249,6 +265,7 @@ def main(cursor, connection):
     userid = 3
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
+    update_collection_name(connection, cursor, "Men", "Men2")
     try:
         while True:
             command = input()
