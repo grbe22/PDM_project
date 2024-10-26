@@ -8,15 +8,18 @@ from sshtunnel import SSHTunnelForwarder
 import argparse
 
 user:str = None
+userid:int = None
 server:SSHTunnelForwarder = None
 cursor = None
 connection = None
 
 # takes cur, conn, username.
-#
+# if user not found, returns none.
+# if found, returns the username.
+# todo: return the user_id instead.
 def login(cur, conn, username):
     cur.execute(f"""
-        SELECT * from p320_23.user where username = '{username}22';
+        SELECT username, user_id from p320_23.user where username = '{username}22';
     """)
     feedback = cur.fetchone()
     print(feedback)
@@ -28,8 +31,21 @@ def login(cur, conn, username):
 def logout(connection, cursor, username):
     ...
 
-def create_collection(connection, cursor, username, name, games):
-    ...
+def create_collection(conn, cur, name, games):
+    cur.execute(f"""
+        select * from p320_23.collection where name = '{name}' and
+        user_id = {userid});
+    """)
+    if cur.fetchone() != None:
+        print(f"Collection named {name} already exists for this user.")
+        return
+    cur.execute(f"""
+        insert into p320_23.collection(name, user_id) values ('{name}',
+        {userid}');
+    """)
+    conn.commit()
+    for i in games:
+        update_collection(conn, cur, )
 
 def view_collection(connection, cursor, username):
     ...
@@ -52,10 +68,10 @@ def play(connection, cursor, username, game, start, end):
 # Takes a follower (the logged in user) and a followee.
 # creates a connection if none exists.
 # prints to console if it was successful or not.
-def follow(cur, conn, follower, followee):
+def follow(cur, conn, followee):
     cur.execute(f"""
         SELECT * from following where
-        follower_id = (select user_id from p320_23.user where username = '{follower}') and 
+        follower_id = {userid}) and 
         following_id = (select user_id from p320_23.user where username = '{followee}');
     """)
     if cur.fetchone() != None:
@@ -63,7 +79,7 @@ def follow(cur, conn, follower, followee):
         return;
     cur.execute(f"""
         INSERT INTO following(follower_id, following_id) VALUES 
-            ((SELECT user_id FROM p320_23.user WHERE username='{follower}'), 
+            ({userid}), 
             (SELECT user_id FROM p320_23.user WHERE username='{followee}'));
     """)
     conn.commit()
@@ -73,10 +89,10 @@ def follow(cur, conn, follower, followee):
 # Takes a follower (the logged in user) and a followee.
 # deletes a connection if it exists.
 # prints to console outcome - successful or not.
-def unfollow(cur, conn, follower, followee):
+def unfollow(cur, conn, followee):
     cur.execute(f"""
         select * from p320_23.following where
-        follower_id = (select user_id from p320_23.user where username = '{follower}') and 
+        follower_id = ({userid}') and 
         following_id = (select user_id from p320_23.user where username = '{followee}');
     """)
     if cur.fetchone() == None:
@@ -84,7 +100,7 @@ def unfollow(cur, conn, follower, followee):
         return
     cur.execute(f""" 
         delete from p320_23.following where 
-        follower_id = (select user_id from p320_23.user where username = '{follower}') and
+        follower_id = ({userid}') and
         following_id = (select user_id from p320_23.user where username = '{followee}');
     """)
     conn.commit()
