@@ -140,6 +140,13 @@ def follow(cur, conn, followee):
     print(f"Successfully followed {followee}")
 
 
+def get_users_by_email(cur, conn, p_email):
+    cur.execute(f"""
+        select username, email from p320_23.user where email like '{p_email}%'; 
+    """)
+    print("Successfully gathered users.")
+    return cur.fetchall()
+
 # Takes a follower (the logged in user) and a followee.
 # deletes a connection if it exists.
 # prints to console outcome - successful or not.
@@ -265,7 +272,10 @@ def main(cursor, connection):
     userid = 3
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
-    update_collection_name(connection, cursor, "Men", "Men2")
+    print(get_users_by_email(cursor, connection, "email"))
+    print(get_users_by_email(cursor, connection, "email@g"))
+    print(get_users_by_email(cursor, connection, "email22"))
+
     try:
         while True:
             command = input()
