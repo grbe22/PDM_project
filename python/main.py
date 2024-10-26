@@ -70,20 +70,20 @@ def create_collection(conn, cur, name, games):
     return coll_id
 
 # gets all collections belonging to the current user.
-# todo: Test.
+# todo: add playtime once implementing play sessions.
 def get_all_collections(conn, cur):
     cur.execute(f"""
-        select name, collection_id from p320_23.collection where user_id = {userid}'; 
+        select name, collection_id from p320_23.collection where user_id = {userid}; 
     """)
     print("Successfully gathered collections.")
     arr = []
-    for i in cur.fetchall:
+    for i in cur.fetchall():
         arr.append([i[0], i[1]])
         # this function also requires all of the games in the list, by name
         cur.execute(f"""
-            select count(collection_id) in p320_23.collection where collection_id = {i[1]};
+            select count(game_id) from p320_23.game_in_collection where collection_id = {i[1]};
         """)
-        arr.append(cur.fetchone())
+        arr[-1].append(cur.fetchone()[0])
         # todo: and then we need to implement the playtime.
 
     # arr should have n elements each with 4 values (todo: 3 currently).
@@ -91,7 +91,6 @@ def get_all_collections(conn, cur):
     return arr
 
 # deletes all dependencies of this collection, then the collection itself.
-# todo: Test.
 def delete_collection(conn, cur, collection_name):
     cur.execute(f"""
         select * from p320_23.collection where user_id = {userid} and name = '{collection_name}';
@@ -106,6 +105,7 @@ def delete_collection(conn, cur, collection_name):
     cur.execute(f"""
         delete from p320_23.collection where user_id = {userid} and name = '{collection_name}';
     """)
+    conn.commit()
     print(f"Succesfully deleted collection {collection_name}.")
 
 def find_game(connection, cursor, args): # boy thats a lot of args
@@ -315,7 +315,8 @@ def main(cursor, connection):
     userid = 3
     print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
             """)
-
+    create_collection(connection, cursor, "Men", [2, 1])
+    delete_collection(connection, cursor, "Men")
     try:
         while True:
             command = input()
