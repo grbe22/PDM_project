@@ -59,7 +59,7 @@ def create_account(conn, cur, username, email, password, f_n, l_n):
                                 ('{username}', '{email}', '{password}', '{f_n}', '{l_n}', '{now}', '{now}')
                 """)
     conn.commit()
-    login(cur, conn, username)
+    login(conn, cur, username)
 
 # signs you out :)
 def logout(conn, cur):
@@ -102,7 +102,6 @@ def get_all_collections(conn, cur):
     cur.execute(f"""
         select name, collection_id from p320_23.collection where user_id = {userid}; 
     """)
-    print("Successfully gathered collections.")
     arr = []
     game_ids = []
     for i in cur.fetchall():
@@ -111,18 +110,23 @@ def get_all_collections(conn, cur):
         cur.execute(f"""
             select count(game_id) from p320_23.game_in_collection where collection_id = {i[1]};
         """)
-        arr[-1].append(cur.fetchone()[0])
+        arr[-1].append(str(cur.fetchone()[0]))
     for i in range(0, len(arr)):
+        cur.execute(f"""
+select game_id from p320_23.game_in_collection where collection_id = {arr[i][1]}
+                    """)
         cur.execute(f"""
             select sum(end_time - start_time) from p320_23.playtime where user_id = {userid} and game_id in
             (select game_id from p320_23.game_in_collection where collection_id = {arr[i][1]});
         """)
+        arr[i].pop(1)
         elapsed_time = np.sum(cur.fetchall())
-        print(elapsed_time)
-        hours, remainder = divmod(elapsed_time.total_seconds(), 3600)
+        print("datetime: ", elapsed_time)
+        if elapsed_time == None:
+            hours, remainder = 0, 0
+        else:
+            hours, remainder = divmod(elapsed_time.total_seconds(), 3600)
         minutes = remainder // 60
-        for i in range(0, len(arr)):
-            arr[i].pop(1)
         arr[i].append(str(int(hours)) + ":" + str(int(minutes)))
     # arr should have n elements each with 4 values (todo: 3 currently).
     # in order, for each element, (name, collection_id, game_count, total_playtime)
@@ -147,11 +151,65 @@ def delete_collection(conn, cur, collection_name):
     print(f"Succesfully deleted collection {collection_name}.")
 
 def find_game(connection, cursor, args): # boy thats a lot of args
-    ...
+    # args is as follows:
+    # 0. <name|platform|release_date|developer|publisher|playtime|ratings> 
+    # 1. <VALUE> 
+    # 2/3. sort by 
+    # 4. <name|price|genre|release_year>
+    # 5. <ascending|descending>
+    if len(args) != 5:
+        print("improperly formatted argument length. Please make sure all elements are unspaced.")
+        return
+    if not(args[0] in ["name", "platform", "release_date", "developer", "publisher", "playtime", "ratings"]):
+        print("Please specify properly which method you want to find the game through.")
+        return
+    if not(args[4] in ["name", "price", "genre", "release_year"]):
+        print("Please specify properly the sorting mechanism.")
+        return
+    if not(args[5] in ["ascending", "descending"]):
+        print("Please make sure to specify ascending or descending order.")
+        return
+    
+    if args[0] == "name":
+        ...
+
+    if args[0] == "platform":
+        ...
+    
+    if args[0] == "release_date":
+        ...
+
+    if args[0] == "developer":
+        ...
+
+    if args[0] == "publisher":
+        ...
+    
+    if args[0] == "playtime":
+        ...
+    
+    if args[0] == "ratings":
+        ...
 
 # isAdd - if True, adds a new game. If False, do not... do that. Remove it.
-def update_collection(conn, cur, isAdd, cid, game):
+def update_collection(conn, cur, isAdd, cname, gname):
+    cur.execute(f"""
+        select collection_id from p320_23.collection where user_id = {userid} and name = '{cname}';
+    """)
+    cid = cur.fetchone()
+    if cid == None:
+        print(f"Collection {cname} not found.")
+        return
+    cid = cid[0]
+    cur.execute(f"""
+        select game_id from p320_23.game where title = '{gname}';
+    """)
+    game = cur.fetchone()[0]
+
     if isAdd:
+        if game == None:
+            print(f"Game {game} not found.")
+            return
         cur.execute(f"""
             select game_id from p320_23.game_in_collection where collection_id = {cid} and game_id = {game};
         """)
@@ -200,7 +258,7 @@ def update_collection_name(conn, cur, oldName, newName):
 # takes the userid, finds the gameid, and posts a rating (if rating in 1, 2, 3, 4, 5).
 # updates ratings where they already exist.
 def rate(conn, cur, gamename, rating):
-    if not(rating in [1, 2, 3, 4, 5]):
+    if not(rating in ["1", "2", "3", "4", "5"]):
         print("Invalid rating value.")
         return
     cur.execute(f"""
@@ -247,6 +305,7 @@ def play(conn, cur, game, start, end):
 
 # calls play with end being now, and the beginning being time minutes away.
 def play_with_duration(conn, cur, game, time):
+    time = int(time)
     play(conn, cur, game, datetime.now() - timedelta(minutes = time), datetime.now())
 
 # Takes a follower (the logged in user) and a followee.
@@ -255,7 +314,7 @@ def play_with_duration(conn, cur, game, time):
 def follow(conn, cur, followee):
     cur.execute(f"""
         SELECT * from following where
-        follower_id = {userid}) and 
+        follower_id = {userid} and 
         following_id = (select user_id from p320_23.user where username = '{followee}');
     """)
     if cur.fetchone() != None:
@@ -263,7 +322,7 @@ def follow(conn, cur, followee):
         return;
     cur.execute(f"""
         INSERT INTO following(follower_id, following_id) VALUES 
-            ({userid}), 
+            ({userid}, 
             (SELECT user_id FROM p320_23.user WHERE username='{followee}'));
     """)
     conn.commit()
@@ -274,7 +333,6 @@ def get_users_by_email(conn, cur, p_email):
     cur.execute(f"""
         select username, email from p320_23.user where email like '%{p_email}%'; 
     """)
-    print("Successfully gathered users.")
     return cur.fetchall()
 
 # Takes a follower (the logged in user) and a followee.
@@ -283,7 +341,7 @@ def get_users_by_email(conn, cur, p_email):
 def unfollow(conn, cur, followee):
     cur.execute(f"""
         select * from p320_23.following where
-        follower_id = ({userid}') and 
+        follower_id = {userid} and 
         following_id = (select user_id from p320_23.user where username = '{followee}');
     """)
     if cur.fetchone() == None:
@@ -291,7 +349,7 @@ def unfollow(conn, cur, followee):
         return
     cur.execute(f""" 
         delete from p320_23.following where 
-        follower_id = ({userid}') and
+        follower_id = {userid} and
         following_id = (select user_id from p320_23.user where username = '{followee}');
     """)
     conn.commit()
@@ -348,63 +406,51 @@ def remove_platform(conn, cur, platform):
     print(f"Succesfully removed {platform} from your platforms.")
 
 
-def checkCommandsList(connection, cursor, username, command):
-    """
-    help
-        - lists user commands.
-    login <USERNAME>
-        - logs in to account. enables all commands below this line.
-    logout
-        - logs out of user account.
-    create collection <NAME> (game1, game2, game3...)
-        - creates a collection linked to the user with name NAME and contents gamei.
-    view collection
-        - prints the list of collections associated with the user, ascending order. returns collection name, # of games, and total playtime.
-    find game <(n)ame|(p)latform|(r)elease date|(d)eveloper|(pu)blisher|(pl)aytime|(ra)tings> <VALUE> sort by <(n)ame|(p)rice|(g)enre|(r)elease year> <(a)scending|(d)escending>
-        - finds a game by VALUE (specified by type) and sorts by field (asc / desc). Sorted ascending by name then release date by default.
-    update collection <(a)dd|(r)emove> <NAME1> <NAME2>
-        - adds / removes game with name NAME2 to collection NAME1. returns a warning if collection is not owned by the user.
-    update collection (n)ame <NAME1> <NAME2>
-        - updates collection named NAME1 to NAME2. If NAME1 does not exist, or does not belong to user, return a warning.
-    rate <NAME> <1|2|3|4|5>
-        - rates game with name NAME between 1-5 stars.
-    play <NAME> <START_DATE> <END_DATE>
-        - logs a play session with start and end date. Total playtime is derived from this.
-    follow <(u)sername|(e)mail> <NAME>
-        - follows a user by either their email or username.
-    follow remove <(u)sername|(e)mail> <NAME>
-        - unfollows a user by either email or username.
-    """
+def checkCommandsList(connection, cursor, command):
     
     command = command.split()
+    
+    if userid == None:
+        if command[0] != "login" and command[0] != "help" and command[0] != "create_account":
+            print ("You are not signed in. Use login <USERNAME>, create_account <USERNAME>, or help for all commands.")
+            return
+    else:
+        if command[0] == "login" or command[0] == "create_account":
+            print("You are already logged in. Logout using command logout.")
+            return
+    
     match (command[0]):
         case "help":
             # print help command
             print("""help
-                    - lists user commands.
-                login <USERNAME>
-                    - logs in to account. enables all commands below this line.
-                logout
-                    - logs out of user account.
-                create collection <NAME> (game1, game2, game3...)
-                    - creates a collection linked to the user with name NAME and contents gamei.
-                get all collections
-                    - prints the list of collections associated with the user, ascending order. returns collection name, # of games, and total playtime.
-                find game <(n)ame|(p)latform|(r)elease date|(d)eveloper|(pu)blisher|(pl)aytime|(ra)tings> <VALUE> sort by <(n)ame|(p)rice|(g)enre|(r)elease year> <(a)scending|(d)escending>
-                    - finds a game by VALUE (specified by type) and sorts by field (asc / desc). Sorted ascending by name then release date by default.
-                update collection <(a)dd|(r)emove> <NAME1> <NAME2>
-                    - adds / removes game with name NAME2 to collection NAME1. returns a warning if collection is not owned by the user.
-                update collection (n)ame <NAME1> <NAME2>
-                    - updates collection named NAME1 to NAME2. If NAME1 does not exist, or does not belong to user, return a warning.
-                rate <NAME> <1|2|3|4|5>
-                    - rates game with name NAME between 1-5 stars.
-                play <NAME> <START_DATE> <END_DATE>
-                    - logs a play session with start and end date. Total playtime is derived from this.
-                follow <(u)sername|(e)mail> <NAME>
-                    - follows a user by either their email or username.
-                follow remove <(u)sername|(e)mail> <NAME>
-                    - unfollows a user by either email or username.
-                """)
+                - lists user commands.
+            login <USERNAME>
+                - logs in to account. enables all commands below this line.
+            create account <USERNAME>
+                - creates a new account. More fields will be prompted.
+            logout
+                - logs out of user account.
+            create collection <NAME> <game_1> <game_2> <game_3> ...
+                - creates a collection linked to the user with name NAME and contents gamei.
+            view collections
+                - prints the list of collections associated with the user, ascending order. returns collection name, # of games, and total playtime.
+            find game <name|platform|release_date|developer|publisher|playtime|ratings> <VALUE> sort by <name|price|genre|release_year> <ascending|descending>
+                - finds a game by VALUE (specified by type) and sorts by field (asc / desc). Sorted ascending by name then release date by default.
+            update collection <C_NAME> <add|remove> <G_NAME>
+                - adds / removes game with name G_NAME to collection C_NAME.
+            update collection <C_NAME> <N_NAME>
+                - updates collection named C_NAME to N_NAME.
+            rate <NAME> <1|2|3|4|5>
+                - rates game with name NAME between 1-5 stars.
+            play <NAME> <MINUTES>
+                - logs a play session with start and end date - ends from command, starts MINUTES minutesbefore.
+            follow <NAME>
+                - follows a user by their username.
+            follow remove <NAME>
+                - unfollows a user by their username.
+            find user <EMAIL>
+                - finds a user by their email (partial or total)
+            """)
         case "login":
             print(command[1])
             login(connection, cursor, command[1])
@@ -413,31 +459,45 @@ def checkCommandsList(connection, cursor, username, command):
         case "create":
             match (command[1]):
                 case "collection":
-                    create_collection(connection, cursor, user, command[2], command[3::])
+                    create_collection(connection, cursor, command[2], command[3::])      
+                case "account":
+                    x = input("Please enter your email address: ")
+                    a = input("please enter your password: ")
+                    y = input("Please enter your first name: ")
+                    z = input("Please enter your last name: ")
+                    print(command)
+                    create_account(connection, cursor, command[2], x, a, y, z)
         case "view":
             match (command[1]):
-                case "collection":
-                    get_all_collections(connection, cursor, user)
+                case "collections":
+                    print(get_all_collections(connection, cursor))
         case "find":
             match (command[1]):
                 case "game":
                     find_game(connection, cursor, command[2::])
+                case "user":
+                    print(get_users_by_email(connection, cursor, command[2]))
         case "update":
             match (command[1]):
                 case "collection":
                     if (command[2] == "name"):
                         update_collection_name(connection, cursor, command[3], command[4])
                     else:
-                        update_collection(connection, cursor, command[2], command[3], command[4])
+                        if (command[3] == "add"):
+                            update_collection(connection, cursor, True, command[2], command[4])
+                        elif (command[3] == "remove"):
+                            update_collection(connection, cursor, False, command[2], command[4])
+                        else:
+                            print("Neither add or remove found.")
         case "rate":
-            rate(connection, cursor, user, command[1], command[2])
+            rate(connection, cursor, command[1], command[2])
         case "play":
-            play(connection, cursor, user, command[1], command[2], command[3])
+            play_with_duration(connection, cursor, command[1], command[2])
         case "follow":
             if (command[1] == "remove"):
-                unfollow(connection, cursor, command[2], command[3])
+                unfollow(connection, cursor, command[2])
             else:
-                follow(connection, cursor, command[1], command[2])
+                follow(connection, cursor, command[1])
         case _:
             print("User may not be logged in. Double check spelling of command or login before running other commands.")
     return
@@ -446,12 +506,20 @@ def checkCommandsList(connection, cursor, username, command):
 def main(connection, cursor):
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
+    
+    while True:
+        command = input()
+        if command.lower() == "quit":
+            break
+        checkCommandsList(connection, cursor, command)
+        print()
+
     try:
         while True:
             command = input()
             if command.lower() == "quit":
                 break
-            checkCommandsList(connection, cursor, user, command)
+            checkCommandsList(connection, cursor, command)
     except Exception as e:
         # fail cleanly
         cursor.close()
