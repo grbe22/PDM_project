@@ -28,7 +28,7 @@ def login(conn, cur, username):
     if feedback == None:
         print("No user was found with that name.")
         return
-    print("User found.")
+    print("User found. Logged in.")
     user = feedback[0]
     userid = feedback[1]
 
@@ -41,9 +41,6 @@ def login(conn, cur, username):
     """)
     conn.commit()
 
-    if feedback == None:
-        print("User not found.")
-        return None
     return feedback
 
 # Requires many arguments.
@@ -65,7 +62,7 @@ def create_account(conn, cur, username, email, password, f_n, l_n):
     login(cur, conn, username)
 
 # signs you out :)
-def logout(conn, cur, username):
+def logout(conn, cur):
     global user
     global userid
     user = None
@@ -328,10 +325,6 @@ def checkCommandsList(connection, cursor, username, command):
     follow remove <(u)sername|(e)mail> <NAME>
         - unfollows a user by either email or username.
     """
-
-    # mock object
-    dummy_usernames = ["Gabe", "Loser", "Gabe2"]
-    dummy_collections = {"Loser_collection":"Loser", "Winner_collection":"Gabe", "Good_games":"Gabe"}
     
     command = command.split()
     match (command[0]):
@@ -345,7 +338,7 @@ def checkCommandsList(connection, cursor, username, command):
                     - logs out of user account.
                 create collection <NAME> (game1, game2, game3...)
                     - creates a collection linked to the user with name NAME and contents gamei.
-                view collection
+                get all collections
                     - prints the list of collections associated with the user, ascending order. returns collection name, # of games, and total playtime.
                 find game <(n)ame|(p)latform|(r)elease date|(d)eveloper|(pu)blisher|(pl)aytime|(ra)tings> <VALUE> sort by <(n)ame|(p)rice|(g)enre|(r)elease year> <(a)scending|(d)escending>
                     - finds a game by VALUE (specified by type) and sorts by field (asc / desc). Sorted ascending by name then release date by default.
@@ -363,9 +356,10 @@ def checkCommandsList(connection, cursor, username, command):
                     - unfollows a user by either email or username.
                 """)
         case "login":
+            print(command[1])
             login(connection, cursor, command[1])
         case "logout":
-            logout(connection, cursor, command[1])
+            logout(connection, cursor)
         case "create":
             match (command[1]):
                 case "collection":
@@ -373,7 +367,7 @@ def checkCommandsList(connection, cursor, username, command):
         case "view":
             match (command[1]):
                 case "collection":
-                    view_collection(connection, cursor, user)
+                    get_all_collections(connection, cursor, user)
         case "find":
             match (command[1]):
                 case "game":
@@ -400,8 +394,7 @@ def checkCommandsList(connection, cursor, username, command):
 
 
 def main(connection, cursor):
-    login(connection, cursor, "Axl Rose")
-    print(  """Welcome to our wonderful database! Login with command (l)ogin <USERNAME>.\nIf username does not exist, creates a new account.
+    print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
     try:
         while True:
