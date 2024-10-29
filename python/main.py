@@ -297,6 +297,56 @@ def unfollow(conn, cur, followee):
     conn.commit()
     print(f"Successfully unfollowed {followee}")
 
+# takes a platform name, and adds it to the user's platforms.
+# if platform does not exist, return an error message.
+def add_platform(conn, cur, platform):
+    cur.execute(f"""
+        select platform_id from p320_23.platform where name = '{platform}';
+    """)
+    dbloc = cur.fetchone()[0]
+    if dbloc == None:
+        print("Platform not found in database.")
+        return
+    cur.execute(f"""
+        select * from p320_23.platform_owned_by_user where user_id = {userid} and platform_id = {dbloc}
+    """)
+    if cur.fetchone() != None:
+        # it already catches duplicats, but I just want to get the user their error message.
+        print("Platform already owned by user.")
+        return
+    
+    cur.execute(f"""
+        insert into p320_23.platform_owned_by_user (user_id, platform_id) values
+                ({userid}, {dbloc})
+    """)
+    conn.commit()
+    print(f"Successfully added {platform} to your platforms.")
+
+# takes a platform name, and removes it to the user's platforms.
+# if platform does not exist, or the user does not have that platform, return an error message.
+def remove_platform(conn, cur, platform):
+    cur.execute(f"""
+        select platform_id from p320_23.platform where name = '{platform}';
+    """)
+    dbloc = cur.fetchone()[0]
+    if dbloc == None:
+        print("Platform not found in database.")
+        return
+    
+    cur.execute(f"""
+        select * from p320_23.platform_owned_by_user where user_id = {userid} and platform_id = {dbloc}
+    """)
+    if cur.fetchone() == None:
+        # it already catches duplicats, but I just want to get the user their error message.
+        print("Platform already owned by user.")
+        return
+    
+    cur.execute(f"""
+        delete from p320_23.platform_owned_by_user where user_id = {userid} and platform_id = {dbloc}
+    """)
+    conn.commit()
+    print(f"Succesfully removed {platform} from your platforms.")
+
 
 def checkCommandsList(connection, cursor, username, command):
     """
