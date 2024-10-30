@@ -406,6 +406,67 @@ def remove_platform(conn, cur, platform):
     print(f"Succesfully removed {platform} from your platforms.")
 
 
+# generates count random users in the database.
+import random
+import numpy
+def gen_random_users(conn, cur):
+    first_names = ["Aurora", "Carlyle", "Franklin", "Helen", "Jeek", "Lois", "Nevada", "Pater", "Rusty", "Thompson", "Vert", "Xander", "Zygote"]
+    last_names = ["Batter", "Dorph", "Erickson", "Ganges", "Intract", "Konnors", "Moot", "Olene", "Quart", "Stevens", "Umbridge", "Waylan", "Yelnats"]
+    # taken from the most common passwords 2011 - 2024, wikipedia, then split in half
+    passwords_part_1 = ["pass", "1234", "qwe", "1q2w", "2pass", "monk", "shad", "mast", "ilove", "mich", "super", "zaq1", "aze"]
+    passwords_part_2 = ["word", "5678", "rty", "3e4r", "word2", "eys", "ows", "erful", "you", "ael", "man", "zaq1", "rty2"]
+    for i in range(0, len(first_names)):
+        for j in range(0, len(last_names)):
+            # 75% chance to create a user of this name
+            # randint is inclusive of a & b
+            if random.randint(0, 3) != 0:
+                continue
+            fn = first_names[i]
+            ln = last_names[j]
+            # generates a random password
+            pw = passwords_part_1[random.randint(0, len(passwords_part_1) - 1)] + passwords_part_2[random.randint(0, len(passwords_part_2) - 1)]
+            # idk why I'm doing this
+            if random.randint(0, 6) == 0:
+                pw = ln + pw
+            elif random.randint(0, 6) == 0:
+                pw = pw + ln
+            
+            # emails
+            email = ""
+            if random.randint(0, 1) == 0:
+                email += fn
+                path = random.randint(0, 2)
+                if path == 0:
+                    email += "_" + ln
+                elif path == 1:
+                    email += "-" + ln
+                else:
+                    email += ln
+            else:
+                email += ln
+                path = random.randint(0, 2)
+                if path == 0:
+                    email += "_" + fn
+                elif path == 1:
+                    email += "-" + fn
+                else:
+                    email += fn
+                
+            if random.randint(0, 1) == 0:
+                email += str(random.randint(1, 4000))
+
+            path = random.randint(0, 3)
+            # most common email domains
+            if path == 0:
+                email += "@gmail.com"
+            if path == 1:
+                email += "@yahoo.net"
+            if path == 2:
+                email += "@outlook.com"
+            if path == 3:
+                email += "@hotmail.net"
+            print("User", str(i), str(j), ":", fn, ln, email)
+
 def checkCommandsList(connection, cursor, command):
     
     command = command.split()
@@ -504,6 +565,8 @@ def checkCommandsList(connection, cursor, command):
 
 
 def main(connection, cursor):
+    gen_random_users(connection, cursor)
+    exit()
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
     
