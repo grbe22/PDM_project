@@ -67,6 +67,7 @@ def logout(conn, cur):
     global userid
     user = None
     userid = None
+    print("See you later!")
 
 # Games MUST be a list of game ids.
 def create_collection(conn, cur, name, games):
@@ -331,7 +332,7 @@ def follow(conn, cur, followee):
 # gets users by a partial email. It can contain the partial email anywhere in the email string.
 def get_users_by_email(conn, cur, p_email):
     cur.execute(f"""
-        select username, email from p320_23.user where email like '%{p_email}%'; 
+        select username, email from p320_23.user where LOWER(email) like LOWER('%{p_email}%'); 
     """)
     return cur.fetchall()
 
@@ -572,6 +573,8 @@ def checkCommandsList(connection, cursor, command):
                 unfollow(connection, cursor, command[2])
             else:
                 follow(connection, cursor, command[1])
+        case "unfollow":
+            unfollow(connection, cursor, command[1])
         case _:
             print("User may not be logged in. Double check spelling of command or login before running other commands.")
     return
