@@ -468,7 +468,7 @@ def gen_random_users(conn, cur):
 
             username = fn + ln + str(random.randint(100, 999))
             username = username[:16]
-            # create account also logs you in so we don't have to deal with that
+            # create account also logs you in so we don't have to deal with that    
             create_account(conn, cur, username, email, pw, fn, ln)
             a = random.randint(0, 2)
             b = random.randint(0, 2)
@@ -578,8 +578,13 @@ def checkCommandsList(connection, cursor, command):
 
 
 def main(connection, cursor):
-    gen_random_users(connection, cursor)
-    exit()
+    # don't run this
+    # it's already been run
+    # there's a chance (slim) for duplicate users to be generated.
+    # so yeah
+    # don't run it
+    # gen_random_users(connection, cursor)
+    # exit()
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
     
