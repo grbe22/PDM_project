@@ -419,7 +419,7 @@ def gen_random_users(conn, cur):
         for j in range(0, len(last_names)):
             # 75% chance to create a user of this name
             # randint is inclusive of a & b
-            if random.randint(0, 3) != 0:
+            if random.randint(0, 3) == 0:
                 continue
             fn = first_names[i]
             ln = last_names[j]
@@ -465,7 +465,20 @@ def gen_random_users(conn, cur):
                 email += "@outlook.com"
             if path == 3:
                 email += "@hotmail.net"
-            print("User", str(i), str(j), ":", fn, ln, email)
+
+            username = fn + ln + str(random.randint(100, 999))
+            username = username[:16]
+            # create account also logs you in so we don't have to deal with that
+            create_account(conn, cur, username, email, pw, fn, ln)
+            a = random.randint(0, 2)
+            b = random.randint(0, 2)
+            consoles = ["windows", "mac", "linux"]
+            # has a 33% chance of only having one console assigned to a user
+            if a == b:
+                add_platform(conn, cur, consoles[a])
+            else:
+                add_platform(conn, cur, consoles[a])
+                add_platform(conn, cur, consoles[b])
 
 def checkCommandsList(connection, cursor, command):
     
