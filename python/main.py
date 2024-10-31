@@ -152,47 +152,123 @@ def delete_collection(conn, cur, collection_name):
     conn.commit()
     print(f"Succesfully deleted collection {collection_name}.")
 
-def find_game(connection, cursor, args): # boy thats a lot of args
+def find_game(conn, cur, args): # boy thats a lot of args
     # args is as follows:
     # 0. <name|platform|release_date|developer|publisher|playtime|ratings> 
     # 1. <VALUE> 
+    # OPTIONAL
     # 2/3. sort by 
     # 4. <name|price|genre|release_year>
     # 5. <ascending|descending>
-    if len(args) != 5:
-        print("improperly formatted argument length. Please make sure all elements are unspaced.")
-        return
     if not(args[0] in ["name", "platform", "release_date", "developer", "publisher", "playtime", "ratings"]):
         print("Please specify properly which method you want to find the game through.")
         return
-    if not(args[4] in ["name", "price", "genre", "release_year"]):
-        print("Please specify properly the sorting mechanism.")
-        return
-    if not(args[5] in ["ascending", "descending"]):
-        print("Please make sure to specify ascending or descending order.")
-        return
     
+    if len(args) != 2:
+        if len(args) != 6:
+            print("improperly formatted argument length. Please make sure all elements are unspaced.")
+            return
+        if not(args[4] in ["name", "price", "genre", "release_year"]):
+            print("Please specify properly the sorting mechanism.")
+            return
+        if not(args[5] in ["ascending", "descending"]):
+            print("Please make sure to specify ascending or descending order.")
+            return
+    
+    games = None
+    game_list = None
     if args[0] == "name":
-        ...
+        game_list = f"""
+            select game_id from p320_23.game where LOWER(title) like LOWER('%{args[1]}%')
+        """
 
-    if args[0] == "platform":
+    elif args[0] == "platform":
+        if not(args[1].lower() in ["windows", "mac", "linux"]):
+            print("Platform not recognized.")
+            return
+        # grabs the game ids where 
+        game_list = f"""
+            select game_id from p320_23.release where platform_id =
+            (select platform_id from p320_23.platform where LOWER(name) = LOWER('{args[1]}'))
+        """
+    
+    elif args[0] == "release_date":
+        game_list = f"""
+            select distinct game_id from p320_23.release where cast(release_date as varchar) like '%{args[1]}%'
+        """
+
+    elif args[0] == "developer":
+        game_list = f"""
+            select game_id from p320_23.developing where developer_id =
+            (select developer_id from p320_23.developer where LOWER(name) like '%{args[1]}%')
+        """
+
+    elif args[0] == "publisher":
+        game_list = f"""
+            select game_id from p320_23.publishing where publisher_id =
+            (select publisher_id from p320_23.publisher where LOWER(name) like '%{args[1]}%')
+        """
+    
+    elif args[0] == "playtime":
         ...
     
-    if args[0] == "release_date":
-        ...
-
-    if args[0] == "developer":
-        ...
-
-    if args[0] == "publisher":
-        ...
+    elif args[0] == "ratings":
+        game_list = f"""
+            select game_id from p320_23.rating where user_id = {userid} and rating = cast({args[1]} as int)
+        """
     
-    if args[0] == "playtime":
-        ...
-    
-    if args[0] == "ratings":
-        ...
+    kw = "asc"
+    if len(args) == 6:
+        if args[5] == "descending":
+            kw = "desc"
+        # name is default, no need to engage
+        if args[4] == "price":
+            # orders by price.
+            cur.execute(f"""
+                select title from p320_23.game where game_id in ({game_list}) order by
+                (select min(price) from p320_23.release where game_id = game.game_id) {kw}
+            """)
+            print(cur.fetchall())
+            return
+        if args[4] == "genre":
+            # orders by genre
+            funct = ""
+            if args[5] == "descending":
+                funct = "max"
+            else:
+                funct = "min"
+            cur.execute(f"""
+                select title from p320_23.game where game_id in ({game_list}) order by
+                (select {funct}(genre_id) from p320_23.game_genre where game_id = game.game_id)) {kw}
+            """)
+            print(cur.fetchall())
+            return
+        if args[4] == "release_year":
+            # orders by release
+            funct = ""
+            if args[5] == "descending":
+                funct = "max"
+            else:
+                funct = "min"
+            cur.execute(f"""
+                select title from p320_23.game where game_id in ({game_list}) order by
+                (select {funct}(release_date) from p320_23.release where game_id = game.game_id) {kw}
+            """)
+            print(cur.fetchall())
 
+    if len(args) == 2 or args[4] == "name":
+        cur.execute(f"""
+            select title from p320_23.game where game_id in ({game_list}) order by title {kw},
+            (select min(release_date) from p320_23.release where game_id = game.game_id) {kw};
+        """)
+        print(cur.fetchall())
+        return
+
+
+
+    
+
+# alternate update collection that takes an id instead of a name
 def a_update_collection(conn, cur, cid, gname):
     cur.execute(f"""
             select game_id from p320_23.game where title = '{gname}';
@@ -541,7 +617,7 @@ def checkCommandsList(connection, cursor, command):
     command = command.split()
     
     if userid == None:
-        if command[0] != "login" and command[0] != "help" and command[0] != "create_account":
+        if command[0] != "login" and command[0] != "help" and (command[0] != "create" and command[1] != "account"):
             print ("You are not signed in. Use login <USERNAME>, create_account <USERNAME>, or help for all commands.")
             return
     else:
@@ -553,36 +629,36 @@ def checkCommandsList(connection, cursor, command):
         case "help":
             # print help command
             print("""help
-                - lists user commands.
-            login <USERNAME>
-                - logs in to account. enables all commands below this line.
-            create account <USERNAME>
-                - creates a new account. More fields will be prompted.
-            logout
-                - logs out of user account.
-            create collection <NAME> <game_1> <game_2> <game_3> ...
-                - creates a collection linked to the user with name NAME and contents gamei.
-            view collections
-                - prints the list of collections associated with the user, ascending order. returns collection name, # of games, and total playtime.
-            find game <name|platform|release_date|developer|publisher|playtime|ratings> <VALUE> sort by <name|price|genre|release_year> <ascending|descending>
-                - finds a game by VALUE (specified by type) and sorts by field (asc / desc). Sorted ascending by name then release date by default.
-            update collection <C_NAME> <add|remove> <G_NAME>
-                - adds / removes game with name G_NAME to collection C_NAME.
-            update collection <C_NAME> <N_NAME>
-                - updates collection named C_NAME to N_NAME.
-            rate <NAME> <1|2|3|4|5>
-                - rates game with name NAME between 1-5 stars.
-            play <NAME> <MINUTES>
-                - logs a play session with start and end date - ends from command, starts MINUTES minutesbefore.
-            follow <NAME>
-                - follows a user by their username.
-            follow remove <NAME>
-                - unfollows a user by their username.
-            find user <EMAIL>
-                - finds a user by their email (partial or total)
-            delete collection <COLLECTION>
-                - deletes a collection by its name
-            """)
+    - lists user commands.
+login <USERNAME>
+    - logs in to account. enables all commands below this line.
+create account <USERNAME>
+    - creates a new account. More fields will be prompted.
+logout
+    - logs out of user account.
+create collection <NAME> <game_1> <game_2> <game_3> ...
+    - creates a collection linked to the user with name NAME and contents gamei.
+view collections
+    - prints the list of collections associated with the user, ascending order. returns collection name, # of games, and total playtime.
+find game <name|platform|release_date|developer|publisher|playtime|ratings> <VALUE> sort by <name|price|genre|release_year> <ascending|descending>
+    - finds a game by VALUE (specified by type) and sorts by field (asc / desc). Sorted ascending by name then release date by default.
+update collection <C_NAME> <add|remove> <G_NAME>
+    - adds / removes game with name G_NAME to collection C_NAME.
+update collection <C_NAME> <N_NAME>
+    - updates collection named C_NAME to N_NAME.
+rate <NAME> <1|2|3|4|5>
+    - rates game with name NAME between 1-5 stars.
+play <NAME> <MINUTES>
+    - logs a play session with start and end date - ends from command, starts MINUTES minutesbefore.
+follow <NAME>
+    - follows a user by their username.
+follow remove <NAME>
+    - unfollows a user by their username.
+find user <EMAIL>
+    - finds a user by their email (partial or total)
+delete collection <COLLECTION>
+    - deletes a collection by its name
+""")
         case "login":
             print(command[1])
             login(connection, cursor, command[1])
@@ -606,7 +682,7 @@ def checkCommandsList(connection, cursor, command):
         case "find":
             match (command[1]):
                 case "game":
-                    find_game(connection, cursor, command[2::])
+                    find_game(connection, cursor, command[2:])
                 case "user":
                     print(get_users_by_email(connection, cursor, command[2]))
         case "update":
