@@ -91,9 +91,10 @@ def create_collection(conn, cur, name, games):
     """)
     coll_id = cur.fetchone()[0]
     print(f"Collection {name} created for {user} with new id {coll_id}.")
+    conn.commit()
     # adds each game, one by one, to the game_in_collection list.
     for i in games:
-        update_collection(conn, cur, True, coll_id, i)
+        a_update_collection(conn, cur, coll_id, i)
     # returns the collection id
     return coll_id
 
@@ -192,12 +193,49 @@ def find_game(connection, cursor, args): # boy thats a lot of args
     if args[0] == "ratings":
         ...
 
+def a_update_collection(conn, cur, cid, gname):
+    cur.execute(f"""
+            select game_id from p320_23.game where title = '{gname}';
+        """)
+        # validates that game exists
+    try:
+        game = cur.fetchone()[0]
+    except:
+        print(f"Game {game} not found.")
+        return
+    # verifies the intersection
+    # throws a warning if user doesn't have the platform the game is on
+    cur.execute(f"""
+        select platform_id from p320_23.platform_owned_by_user where user_id = {userid}
+        intersect
+        select platform_id from p320_23.release where game_id = {game};
+    """)
+    if cur.fetchone() == None:
+        if (input(f"You do not own any platforms {gname} is on. type 'y' to add anyway. ") != "y"):
+            print(f"Skipping {gname}...")
+            return
+        print()
+
+    cur.execute(f"""
+        select game_id from p320_23.game_in_collection where collection_id = {cid} and game_id = {game};
+    """)
+    if cur.fetchone() != None:
+        print(f"Game with ID {game} already exists in collection with ID {cid}.")
+        return
+    cur.execute(f"""
+        insert into p320_23.game_in_collection (game_id, collection_id) values ({game}, {cid});
+    """)
+    conn.commit()
+    print(f"Game with id {game} successfully inserted into collection with id {cid}")
+
 # isAdd - if True, adds a new game. If False, do not... do that. Remove it.
 def update_collection(conn, cur, isAdd, cname, gname):
+    # validates that collection exists
     cur.execute(f"""
         select collection_id from p320_23.collection where user_id = {userid} and name = '{cname}';
     """)
     cid = cur.fetchone()
+
     if cid == None:
         print(f"Collection {cname} not found.")
         return
@@ -205,12 +243,29 @@ def update_collection(conn, cur, isAdd, cname, gname):
     cur.execute(f"""
         select game_id from p320_23.game where title = '{gname}';
     """)
-    game = cur.fetchone()[0]
-
+    # validates that game exists
+    try:
+        game = cur.fetchone()[0]
+    except:
+        print(f"Game {game} not found.")
+        return
     if isAdd:
-        if game == None:
-            print(f"Game {game} not found.")
-            return
+        # verifies the intersection
+        # throws a warning if user doesn't have the platform the game is on
+        cur.execute(f"""
+            if (not exists(
+            select platform_id from p320_23.platform_owned_by_user where user_id = {userid}
+            intersect
+            select platform_id from p320_23.release where game_id = {game};))
+            begin
+            raiseerror('game intersection not found')
+        """)
+        if cur.fetchone() == None:
+            if (input(f"You do not own any platforms {game} is on. type 'y' to ") != "y"):
+                print(f"Skipping {game}...")
+                return
+            print()
+
         cur.execute(f"""
             select game_id from p320_23.game_in_collection where collection_id = {cid} and game_id = {game};
         """)
@@ -525,6 +580,8 @@ def checkCommandsList(connection, cursor, command):
                 - unfollows a user by their username.
             find user <EMAIL>
                 - finds a user by their email (partial or total)
+            delete collection <COLLECTION>
+                - deletes a collection by its name
             """)
         case "login":
             print(command[1])
@@ -568,6 +625,9 @@ def checkCommandsList(connection, cursor, command):
             rate(connection, cursor, command[1], command[2])
         case "play":
             play_with_duration(connection, cursor, command[1], command[2])
+        case "delete":
+            if (command[1] == "collection"):
+                delete_collection(connection, cursor, command[2])
         case "follow":
             if (command[1] == "remove"):
                 unfollow(connection, cursor, command[2])
@@ -580,7 +640,7 @@ def checkCommandsList(connection, cursor, command):
     return
 
 
-def main(connection, cursor):
+def main(connection, cursor, server):
     # don't run this
     # it's already been run
     # there's a chance (slim) for duplicate users to be generated.
@@ -590,13 +650,6 @@ def main(connection, cursor):
     # exit()
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
-    
-    while True:
-        command = input()
-        if command.lower() == "quit":
-            break
-        checkCommandsList(connection, cursor, command)
-        print()
 
     try:
         while True:
@@ -613,7 +666,6 @@ def main(connection, cursor):
     else:
         cursor.close()
         connection.close()
-        server.close()
     print("Goodbye!")
 
 
@@ -639,7 +691,7 @@ def connectToStarbug():
     cursor = connection.cursor()
     
     print("Database connection established")
-    main(connection, cursor)
+    main(connection, cursor, server)
     # Use cursor.execute() to perform SQL queries;
     # use connection.commit() to make any changes permanent;
     # use cursor.fetchall() to get the results of a SELECT query;
