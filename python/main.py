@@ -675,6 +675,10 @@ find user <EMAIL>
     - finds a user by their email (partial or total)
 delete collection <COLLECTION>
     - deletes a collection by its name
+add platform <PLATFORM>
+    - adds a platform to your repertiore
+remove platform <PLATFORM>
+    - removes a platform from your repertoire
 """)
         case "login":
             print(command[1])
@@ -728,6 +732,12 @@ delete collection <COLLECTION>
                 follow(connection, cursor, command[1])
         case "unfollow":
             unfollow(connection, cursor, command[1])
+        case "add":
+            if command[1] == "platform":
+                add_platform(connection, cursor, command[2])
+        case "remove":
+            if command[1] == "platform":
+                remove_platform(connection, cursor, command[2])
         case _:
             print("User may not be logged in. Double check spelling of command or login before running other commands.")
     return
