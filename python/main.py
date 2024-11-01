@@ -165,14 +165,14 @@ def find_game(conn, cur, args): # boy thats a lot of args
         print("Please specify properly which method you want to find the game through.")
         return
     
-    if len(args) != 2 and args[0] != "playtime":
-        if len(args) != 6:
+    if len(args) != 2:
+        if len(args) != 5:#these args are supposed to be optinal and they currently break when trying to query
             print("improperly formatted argument length. Please make sure all elements are unspaced.")
             return
-        if not(args[4] in ["name", "price", "genre", "release_year"]):
+        if not(args[3] in ["name", "price", "genre", "release_year"]):
             print("Please specify properly the sorting mechanism.")
             return
-        if not(args[5] in ["ascending", "descending"]):
+        if not(args[4] in ["ascending", "descending"]):
             print("Please make sure to specify ascending or descending order.")
             return
     
@@ -226,11 +226,11 @@ def find_game(conn, cur, args): # boy thats a lot of args
         """
     
     kw = "asc"
-    if len(args) == 6:
-        if args[5] == "descending":
+    if len(args) == 5:
+        if args[4] == "descending":
             kw = "desc"
         # name is default, no need to engage
-        if args[4] == "price":
+        if args[3] == "price":
             # orders by price.
             cur.execute(f"""
                 select title from p320_23.game where game_id in ({game_list}) order by
@@ -238,10 +238,10 @@ def find_game(conn, cur, args): # boy thats a lot of args
             """)
             print(cur.fetchall())
             return
-        if args[4] == "genre":
+        if args[3] == "genre":
             # orders by genre
             funct = ""
-            if args[5] == "descending":
+            if args[4] == "descending":
                 funct = "max"
             else:
                 funct = "min"
@@ -251,10 +251,10 @@ def find_game(conn, cur, args): # boy thats a lot of args
             """)
             print(cur.fetchall())
             return
-        if args[4] == "release_year":
+        if args[3] == "release_year":
             # orders by release
             funct = ""
-            if args[5] == "descending":
+            if args[4] == "descending":
                 funct = "max"
             else:
                 funct = "min"
@@ -346,11 +346,11 @@ def update_collection(conn, cur, isAdd, cname, gname):
         # verifies the intersection
         # throws a warning if user doesn't have the platform the game is on
         cur.execute(f"""
-            if (not exists(
+            if not exists(
             select platform_id from p320_23.platform_owned_by_user where user_id = {userid}
             intersect
-            select platform_id from p320_23.release where game_id = {game};))
-            begin
+            select platform_id from p320_23.release where game_id = {game};)
+            then
             raiseerror('game intersection not found')
         """)
         if cur.fetchone() == None:
