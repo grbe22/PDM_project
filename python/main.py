@@ -160,11 +160,12 @@ def find_game(conn, cur, args): # boy thats a lot of args
     # 2/3. sort by 
     # 4. <name|price|genre|release_year>
     # 5. <ascending|descending>
+    
     if not(args[0] in ["name", "platform", "release_date", "developer", "publisher", "playtime", "ratings"]):
         print("Please specify properly which method you want to find the game through.")
         return
     
-    if len(args) != 2:
+    if len(args) != 2 and args[0] != "playtime":
         if len(args) != 6:
             print("improperly formatted argument length. Please make sure all elements are unspaced.")
             return
@@ -211,10 +212,11 @@ def find_game(conn, cur, args): # boy thats a lot of args
     
     elif args[0] == "playtime":
         game_list = f"""
-            select title from p320_23.game 
-            join playtime_hours on p320_23.game.game_id = p320_23.playtime.game_id
-            where user_id = {userid}
-            order by sum(extract(epoch from (end_playtime - start_playtime)) / 3600) desc
+            select g.game_id from p320_23.game g 
+            join p320_23.playtime p on g.game_id = p.game_id
+            where p.user_id = {userid}
+            group by g.game_id, g.title
+            order by sum(extract(epoch from (p.end_time - p.start_time)) / 3600) desc
             limit 10
         """
     
@@ -261,6 +263,15 @@ def find_game(conn, cur, args): # boy thats a lot of args
                 (select {funct}(release_date) from p320_23.release where game_id = game.game_id) {kw}
             """)
             print(cur.fetchall())
+
+    if args[0] == "playtime":
+        kw = "desc"
+        cur.execute(f"""
+            select title from p320_23.game where game_id in ({game_list}) order by title {kw},
+            (select min(release_date) from p320_23.release where game_id = game.game_id) {kw};
+        """)
+        print(cur.fetchall())
+        return
 
     if len(args) == 2 or args[4] == "name":
         cur.execute(f"""
