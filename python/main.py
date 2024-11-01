@@ -210,7 +210,13 @@ def find_game(conn, cur, args): # boy thats a lot of args
         """
     
     elif args[0] == "playtime":
-        ...
+        game_list = f"""
+            select title from p320_23.game 
+            join playtime_hours on p320_23.game.game_id = p320_23.playtime.game_id
+            where user_id = {userid}
+            order by sum(extract(epoch from (end_playtime - start_playtime)) / 3600) desc
+            limit 10
+        """
     
     elif args[0] == "ratings":
         game_list = f"""
