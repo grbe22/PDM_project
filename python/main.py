@@ -629,6 +629,51 @@ def gen_random_users(conn, cur):
                 add_platform(conn, cur, consoles[a])
                 add_platform(conn, cur, consoles[b])
 
+def genFollowers(conn, cur):
+    cur.execute(f"""
+        select username from p320_23.user
+    """)
+    all_users = cur.fetchall()[10:]
+    for i in all_users:
+        login(conn, cur, i[0])
+
+        random_count = random.randint(0, 10)
+        for j in range(0, random_count):
+            k = random.randint(0, len(all_users) - 1)
+            follow(conn, cur, all_users[k][0])
+
+def genRatings(conn, cur):
+    cur.execute(f"""
+        select username from p320_23.user""")
+    all_users = cur.fetchall()
+    cur.execute(f"""
+        select title from p320_23.game""")
+    all_games = cur.fetchall()
+    for i in all_users:
+        login(conn, cur, i[0])
+        rating_count = random.randint(0, 6)
+        if rating_count > 4:
+            rating_count = random.randint(4, 15)
+        # some users are more generous than others
+        skew = random.randint(0, 2)
+        for j in range(0, rating_count):
+            k = random.randint(0, len(all_games) - 1)
+            ratee = random.randint(1, 3) + skew
+            rate(conn, cur, all_games[k][0], str(ratee))
+
+def genPlaytime(conn, cur):
+    cur.execute(f"""
+        select username from p320_23.user""")
+    all_users = cur.fetchall()
+    cur.execute(f"""
+        select title from p320_23.game""")
+    all_games = cur.fetchall()
+    for i in all_users:
+        cur_game = all_games[random.randint(0, len(all_games) - 1)][0]
+        login(conn, cur, i[0])
+        play_with_duration(conn, cur, cur_game, random.randint(20, 240))
+        
+
 def checkCommandsList(connection, cursor, command):
     
     command = command.split()
