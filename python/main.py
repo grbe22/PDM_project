@@ -555,6 +555,34 @@ def remove_platform(conn, cur, platform):
     print(f"Succesfully removed {platform} from your platforms.")
 
 
+# prints the number of people you follow
+def following_count(conn, cur):
+    cur.execute(f"""
+        select count(following_id) from p320_23.following where follower_id = {userid}
+    """)
+    print("You are following", cur.fetchone()[0], "users.")
+
+
+# print the number of people following you
+def follower_count(conn, cur):
+    cur.execute(f"""
+        select count(follower_id) from p320_23.following where following_id = {userid}
+    """)
+    print("You have", cur.fetchone()[0], "followers.")
+
+
+# print the number of collections you have
+def collection_count(conn, cur):
+    cur.execute(f"""
+        select count(name) from p320_23.collection where user_id = {userid}
+    """)
+    print("You have", cur.fetchone()[0], "collections.")
+
+def get_profile(conn, cur):
+    follower_count(conn, cur)
+    following_count(conn, cur)
+    collection_count(conn, cur)
+
 # generates count random users in the database.
 import random
 import numpy
@@ -629,6 +657,51 @@ def gen_random_users(conn, cur):
                 add_platform(conn, cur, consoles[a])
                 add_platform(conn, cur, consoles[b])
 
+def genFollowers(conn, cur):
+    cur.execute(f"""
+        select username from p320_23.user
+    """)
+    all_users = cur.fetchall()[10:]
+    for i in all_users:
+        login(conn, cur, i[0])
+
+        random_count = random.randint(0, 10)
+        for j in range(0, random_count):
+            k = random.randint(0, len(all_users) - 1)
+            follow(conn, cur, all_users[k][0])
+
+def genRatings(conn, cur):
+    cur.execute(f"""
+        select username from p320_23.user""")
+    all_users = cur.fetchall()
+    cur.execute(f"""
+        select title from p320_23.game""")
+    all_games = cur.fetchall()
+    for i in all_users:
+        login(conn, cur, i[0])
+        rating_count = random.randint(0, 6)
+        if rating_count > 4:
+            rating_count = random.randint(4, 15)
+        # some users are more generous than others
+        skew = random.randint(0, 2)
+        for j in range(0, rating_count):
+            k = random.randint(0, len(all_games) - 1)
+            ratee = random.randint(1, 3) + skew
+            rate(conn, cur, all_games[k][0], str(ratee))
+
+def genPlaytime(conn, cur):
+    cur.execute(f"""
+        select username from p320_23.user""")
+    all_users = cur.fetchall()
+    cur.execute(f"""
+        select title from p320_23.game""")
+    all_games = cur.fetchall()
+    for i in all_users:
+        cur_game = all_games[random.randint(0, len(all_games) - 1)][0]
+        login(conn, cur, i[0])
+        play_with_duration(conn, cur, cur_game, random.randint(20, 240))
+        
+
 def checkCommandsList(connection, cursor, command):
     
     command = command.split()
@@ -653,6 +726,8 @@ create account <USERNAME>
     - creates a new account. More fields will be prompted.
 logout
     - logs out of user account.
+profile
+    - views your profile
 create collection <NAME> <game_1> <game_2> <game_3> ...
     - creates a collection linked to the user with name NAME and contents gamei.
 view collections
@@ -685,6 +760,8 @@ remove platform <PLATFORM>
             login(connection, cursor, command[1])
         case "logout":
             logout(connection, cursor)
+        case "profile":
+            get_profile(connection, cursor)
         case "create":
             match (command[1]):
                 case "collection":
@@ -751,6 +828,7 @@ def main(connection, cursor, server):
     # don't run it
     # gen_random_users(connection, cursor)
     # exit()
+    # genPlaytime(connection, cursor)
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
 
