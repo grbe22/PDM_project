@@ -555,6 +555,29 @@ def remove_platform(conn, cur, platform):
     print(f"Succesfully removed {platform} from your platforms.")
 
 
+# prints the number of people you follow
+def following_count(conn, cur):
+    cur.execute(f"""
+        select count(following_id) from p320_23.following where follower_id = {userid}
+    """)
+    print("You are following", cur.fetchone()[0], "users.")
+
+
+# print the number of people following you
+def follower_count(conn, cur):
+    cur.execute(f"""
+        select count(follower_id) from p320_23.following where following_id = {userid}
+    """)
+    print("You have", cur.fetchone()[0], "followers.")
+
+
+# print the number of collections you have
+def collection_count(conn, cur):
+    cur.execute(f"""
+        select count(name) from p320_23.collections where user_id = {userid}
+    """)
+    print("You have", cur.fetchall()[0], "collections.")
+
 # generates count random users in the database.
 import random
 import numpy
@@ -796,6 +819,11 @@ def main(connection, cursor, server):
     # don't run it
     # gen_random_users(connection, cursor)
     # exit()
+    # genPlaytime(connection, cursor)
+    login(connection, cursor, "Axl_Rose")
+    follower_count(connection, cursor)
+    following_count(connection, cursor)
+    collection_count(connection, cursor)
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
 
