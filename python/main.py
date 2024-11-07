@@ -578,6 +578,11 @@ def collection_count(conn, cur):
     """)
     print("You have", cur.fetchone()[0], "collections.")
 
+def get_profile(conn, cur):
+    follower_count(conn, cur)
+    following_count(conn, cur)
+    collection_count(conn, cur)
+
 # generates count random users in the database.
 import random
 import numpy
@@ -721,6 +726,8 @@ create account <USERNAME>
     - creates a new account. More fields will be prompted.
 logout
     - logs out of user account.
+profile
+    - views your profile
 create collection <NAME> <game_1> <game_2> <game_3> ...
     - creates a collection linked to the user with name NAME and contents gamei.
 view collections
@@ -753,6 +760,8 @@ remove platform <PLATFORM>
             login(connection, cursor, command[1])
         case "logout":
             logout(connection, cursor)
+        case "profile":
+            get_profile(connection, cursor)
         case "create":
             match (command[1]):
                 case "collection":
@@ -820,10 +829,6 @@ def main(connection, cursor, server):
     # gen_random_users(connection, cursor)
     # exit()
     # genPlaytime(connection, cursor)
-    login(connection, cursor, "Axl_Rose")
-    follower_count(connection, cursor)
-    following_count(connection, cursor)
-    collection_count(connection, cursor)
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
 
