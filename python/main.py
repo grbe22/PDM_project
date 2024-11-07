@@ -574,9 +574,9 @@ def follower_count(conn, cur):
 # print the number of collections you have
 def collection_count(conn, cur):
     cur.execute(f"""
-        select count(name) from p320_23.collections where user_id = {userid}
+        select count(name) from p320_23.collection where user_id = {userid}
     """)
-    print("You have", cur.fetchall()[0], "collections.")
+    print("You have", cur.fetchone()[0], "collections.")
 
 # generates count random users in the database.
 import random
