@@ -578,10 +578,16 @@ def collection_count(conn, cur):
     """)
     print("You have", cur.fetchone()[0], "collections.")
 
+# get the top games (by rating)
+def get_top_games(conn, cur):
+    pass
+
+# calls some good, healthy functions
 def get_profile(conn, cur):
     follower_count(conn, cur)
     following_count(conn, cur)
     collection_count(conn, cur)
+    get_top_games(conn, cur)
 
 # generates count random users in the database.
 import random
@@ -828,7 +834,6 @@ def main(connection, cursor, server):
     # don't run it
     # gen_random_users(connection, cursor)
     # exit()
-    # genPlaytime(connection, cursor)
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
 
