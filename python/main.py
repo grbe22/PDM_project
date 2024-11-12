@@ -580,7 +580,15 @@ def collection_count(conn, cur):
 
 # get the top games (by rating)
 def get_top_games(conn, cur):
-    pass
+    cur.execute(f"""
+        select rating, title from p320_23.rating
+        inner join
+        p320_23.game on p320_23.rating.game_id = p320_23.game.game_id
+        where user_id = {userid}
+        order by rating desc, title desc
+        limit 10;
+    """)
+    print(cur.fetchall())
 
 # calls some good, healthy functions
 def get_profile(conn, cur):
@@ -834,6 +842,8 @@ def main(connection, cursor, server):
     # don't run it
     # gen_random_users(connection, cursor)
     # exit()
+    # don't run this is over
+    # run this vvv
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
             """)
 
