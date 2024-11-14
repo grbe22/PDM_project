@@ -597,6 +597,22 @@ def get_profile(conn, cur):
     collection_count(conn, cur)
     get_top_games(conn, cur)
 
+# 20 most popular videogames in the last 90 days
+def most_pop_games(conn, cur):
+    earliest_date = datetime.date(datetime.now() - timedelta(days = 90))
+    # popular is determined by what game has the most play sessions in the last 90 days
+    cur.execute(f"""
+        select title, count(game.title) from p320_23.game join p320_23.playtime on game.game_id = playtime.game_id
+        where playtime.end_time > '{earliest_date}' group by game.title order by count(game.title) desc limit 20
+    """)
+    j = cur.fetchall()
+    print("top 20 games:")
+    for i in range(0, len(j)):
+        
+        print("\t"+str(i + 1)+ ":", j[i])
+    
+
+
 # generates count random users in the database.
 import random
 import numpy
@@ -768,7 +784,11 @@ add platform <PLATFORM>
     - adds a platform to your repertiore
 remove platform <PLATFORM>
     - removes a platform from your repertoire
+popular
+    - returns the top 20 games
 """)
+        case "popular":
+            most_pop_games(connection, cursor)
         case "login":
             print(command[1])
             login(connection, cursor, command[1])
@@ -835,6 +855,7 @@ remove platform <PLATFORM>
 
 
 def main(connection, cursor, server):
+    most_pop_games(connection, cursor)
     # don't run this
     # it's already been run
     # there's a chance (slim) for duplicate users to be generated.
