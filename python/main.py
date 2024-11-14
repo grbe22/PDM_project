@@ -722,9 +722,9 @@ def genCollections(conn, cur):
     cur.execute(f"""
         select title from p320_23.game""")
     all_games = cur.fetchall()
+    
     for i in all_users:
-        #create_collection(conn, cur, name, games):
-        games = all_games[random.randint(0, len(all_games) - 1)][2]
+        games = random.sample(all_games, 3)
         login(conn, cur, i[0])
         adjectives = ["Cool", "Epic", "Fun", "Chill", "Awesome", "Crazy", "Classic", "Retro", "Ultimate", "Rad"]
         nouns = ["Games", "Arcade", "Collection", "Library", "Hub", "Vault", "Showcase", "Gallery", "Zone"]
@@ -732,8 +732,8 @@ def genCollections(conn, cur):
         # Pick a random adjective and noun
         adjective = random.choice(adjectives)
         noun = random.choice(nouns)
-
-        create_collection(conn, cur, f"{adjective} {noun}", games)
+        collection_name = f"{adjective} {noun}"
+        create_collection(conn, cur, collection_name, games)
         
 
 def checkCommandsList(connection, cursor, command):
@@ -862,6 +862,8 @@ def main(connection, cursor, server):
     # don't run it
     # gen_random_users(connection, cursor)
     # exit()
+    genCollections(connection, cursor)
+    exit()
     # don't run this is over
     # run this vvv
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
