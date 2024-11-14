@@ -706,6 +706,26 @@ def genPlaytime(conn, cur):
         cur_game = all_games[random.randint(0, len(all_games) - 1)][0]
         login(conn, cur, i[0])
         play_with_duration(conn, cur, cur_game, random.randint(20, 240))
+
+def genCollections(conn, cur):
+    cur.execute(f"""
+        select username from p320_23.user""")
+    all_users = cur.fetchall()
+    cur.execute(f"""
+        select title from p320_23.game""")
+    all_games = cur.fetchall()
+    for i in all_users:
+        #create_collection(conn, cur, name, games):
+        games = all_games[random.randint(0, len(all_games) - 1)][2]
+        login(conn, cur, i[0])
+        adjectives = ["Cool", "Epic", "Fun", "Chill", "Awesome", "Crazy", "Classic", "Retro", "Ultimate", "Rad"]
+        nouns = ["Games", "Arcade", "Collection", "Library", "Hub", "Vault", "Showcase", "Gallery", "Zone"]
+
+        # Pick a random adjective and noun
+        adjective = random.choice(adjectives)
+        noun = random.choice(nouns)
+
+        create_collection(conn, cur, f"{adjective} {noun}", games)
         
 
 def checkCommandsList(connection, cursor, command):
