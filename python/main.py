@@ -610,8 +610,35 @@ def most_pop_games(conn, cur):
     for i in range(0, len(j)):
         
         print("\t"+str(i + 1)+ ":", j[i])
-    
 
+# 20 most popular videogames from the people you follow.
+def follower_pop_games(conn, cur):
+    earliest_date = datetime.date(datetime.now() - timedelta(days = 90))
+    # popular is determined by what game has the most play sessions in the last 90 days
+    cur.execute(f"""
+        select title, count(game.title) from p320_23.game join p320_23.playtime on game.game_id = playtime.game_id
+        join p320_23.following on following.following_id = playtime.user_id
+        where playtime.end_time > '{earliest_date}' and following.follower_id = {userid}
+        group by game.title order by count(game.title) desc limit 20
+    """)
+    j = cur.fetchall()
+    print("top 20 games:")
+    for i in range(0, len(j)):
+        
+        print("\t"+str(i + 1)+ ":", j[i])
+    
+# generates some recommended games based on
+# genre
+def recommend_games(conn, cur):
+    cur.execute(f"""
+        select title, count(title) from p320_23.game join p320_23.game_genre on game_genre.game_id = game.game_id
+        join p320_23.genre on genre.genre_id = game_genre.genre_id where game_genre.genre_id in
+        (select genre_id from
+        p320_23.playtime join p320_23.game on playtime.game_id = game.game_id
+        join p320_23.game_genre on game_genre.game_id = game.game_id
+        where playtime.user_id = 9) group by title order by count(title) desc;
+    """)
+    print("Recommended based on genre: \n", cur.fetchall())
 
 # generates count random users in the database.
 import random
@@ -786,9 +813,17 @@ remove platform <PLATFORM>
     - removes a platform from your repertoire
 popular
     - returns the top 20 games
+popular follower
+    - returns the top 20 games among followers
+recommended
 """)
         case "popular":
-            most_pop_games(connection, cursor)
+            if (len(command) > 1 and command[1] == "follower"):
+                follower_pop_games(connection, cursor)
+            else:
+                most_pop_games(connection, cursor)
+        case "recommended":
+            recommend_games(connection, cursor)
         case "login":
             print(command[1])
             login(connection, cursor, command[1])
