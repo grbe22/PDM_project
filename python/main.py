@@ -627,8 +627,7 @@ def follower_pop_games(conn, cur):
         
         print("\t"+str(i + 1)+ ":", j[i])
     
-# generates some recommended games based on
-# genre
+# generates some recommended games based on genre
 def recommend_games(conn, cur):
     cur.execute(f"""
         select title, count(title) from p320_23.game join p320_23.game_genre on game_genre.game_id = game.game_id
@@ -639,6 +638,22 @@ def recommend_games(conn, cur):
         where playtime.user_id = 9) group by title order by count(title) desc;
     """)
     print("Recommended based on genre: \n", cur.fetchall())
+
+def new_releases(conn, cur):
+    earliest_date = datetime.date(datetime.now() - timedelta(days = 30))
+    # popular is determined by what game has the most play sessions in the last 90 days
+    cur.execute(f"""
+        select title, count(game.title) from p320_23.game join p320_23.playtime on game.game_id = playtime.game_id
+        join p320_23.release on release.game_id = game.game_id
+        where playtime.end_time > '{earliest_date}' and release.release_date > '{earliest_date}'
+        group by release.game_id, game.title order by count(game.title) desc limit 5
+    """)
+    j = cur.fetchall()
+    print("top 5 new releases:")
+    for i in range(0, len(j)):
+        
+        print("\t"+str(i + 1)+ ":", j[i])
+
 
 # generates count random users in the database.
 import random
@@ -815,11 +830,16 @@ popular
     - returns the top 20 games
 popular follower
     - returns the top 20 games among followers
+popular new
+    - returns the 5 most popular games released in the last month (if 5+ games exist)
 recommended
+    - returns the recommended games based on how many matching genres you have
 """)
         case "popular":
             if (len(command) > 1 and command[1] == "follower"):
                 follower_pop_games(connection, cursor)
+            elif (len(command) > 1 and command[1] == "new"):
+                new_releases(connection, cursor)
             else:
                 most_pop_games(connection, cursor)
         case "recommended":
@@ -890,7 +910,6 @@ recommended
 
 
 def main(connection, cursor, server):
-    most_pop_games(connection, cursor)
     # don't run this
     # it's already been run
     # there's a chance (slim) for duplicate users to be generated.
