@@ -1,0 +1,22 @@
+login gabe
+popular
+popular follower
+popular new
+recommended
+profile
+logout
+create account <NAME>
+	(follow instructions)
+create collection spherical Minecraft Fortnite
+update collection spherical remove Minecraft
+rate Minecraft 5
+play Minecraft 180
+	(180 minutes, ending now)
+find game developer valve
+find game publisher valve sort by price descending
+follow Axl_Rose
+unfollow Axl_Rose
+add platform windows
+update collection spherical add Minecraft
+remove platform windows	
+profile
