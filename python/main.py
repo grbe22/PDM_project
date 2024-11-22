@@ -166,13 +166,13 @@ def find_game(conn, cur, args): # boy thats a lot of args
         return
     
     if len(args) != 2:
-        if len(args) != 5:#these args are supposed to be optinal and they currently break when trying to query
+        if len(args) != 6:#these args are supposed to be optinal and they currently break when trying to query
             print("improperly formatted argument length. Please make sure all elements are unspaced.")
             return
-        if not(args[3] in ["name", "price", "genre", "release_year"]):
+        if not(args[4] in ["name", "price", "genre", "release_year"]):
             print("Please specify properly the sorting mechanism.")
             return
-        if not(args[4] in ["ascending", "descending"]):
+        if not(args[5] in ["ascending", "descending"]):
             print("Please make sure to specify ascending or descending order.")
             return
     
@@ -226,11 +226,11 @@ def find_game(conn, cur, args): # boy thats a lot of args
         """
     
     kw = "asc"
-    if len(args) == 5:
-        if args[4] == "descending":
+    if len(args) == 6:
+        if args[5] == "descending":
             kw = "desc"
         # name is default, no need to engage
-        if args[3] == "price":
+        if args[4] == "price":
             # orders by price.
             cur.execute(f"""
                 select title from p320_23.game where game_id in ({game_list}) order by
@@ -238,10 +238,10 @@ def find_game(conn, cur, args): # boy thats a lot of args
             """)
             print(cur.fetchall())
             return
-        if args[3] == "genre":
+        if args[4] == "genre":
             # orders by genre
             funct = ""
-            if args[4] == "descending":
+            if args[5] == "descending":
                 funct = "max"
             else:
                 funct = "min"
@@ -251,10 +251,10 @@ def find_game(conn, cur, args): # boy thats a lot of args
             """)
             print(cur.fetchall())
             return
-        if args[3] == "release_year":
+        if args[4] == "release_year":
             # orders by release
             funct = ""
-            if args[4] == "descending":
+            if args[5] == "descending":
                 funct = "max"
             else:
                 funct = "min"
@@ -341,18 +341,15 @@ def update_collection(conn, cur, isAdd, cname, gname):
     try:
         game = cur.fetchone()[0]
     except:
-        print(f"Game {game} not found.")
+        print(f"Game {gname} not found.")
         return
     if isAdd:
         # verifies the intersection
         # throws a warning if user doesn't have the platform the game is on
         cur.execute(f"""
-            if not exists(
             select platform_id from p320_23.platform_owned_by_user where user_id = {userid}
             intersect
-            select platform_id from p320_23.release where game_id = {game};)
-            then
-            raiseerror('game intersection not found')
+            select platform_id from p320_23.release where game_id = {game};
         """)
         if cur.fetchone() == None:
             if (input(f"You do not own any platforms {game} is on. type 'y' to ") != "y"):
@@ -598,6 +595,64 @@ def get_profile(conn, cur):
     collection_count(conn, cur)
     get_top_games(conn, cur)
 
+# 20 most popular videogames in the last 90 days
+def most_pop_games(conn, cur):
+    earliest_date = datetime.date(datetime.now() - timedelta(days = 90))
+    # popular is determined by what game has the most play sessions in the last 90 days
+    cur.execute(f"""
+        select title, count(game.title) from p320_23.game join p320_23.playtime on game.game_id = playtime.game_id
+        where playtime.end_time > '{earliest_date}' group by game.title order by count(game.title) desc limit 20
+    """)
+    j = cur.fetchall()
+    print("top 20 games:")
+    for i in range(0, len(j)):
+        
+        print("\t"+str(i + 1)+ ":", j[i])
+
+# 20 most popular videogames from the people you follow.
+def follower_pop_games(conn, cur):
+    earliest_date = datetime.date(datetime.now() - timedelta(days = 90))
+    # popular is determined by what game has the most play sessions in the last 90 days
+    cur.execute(f"""
+        select title, count(game.title) from p320_23.game join p320_23.playtime on game.game_id = playtime.game_id
+        join p320_23.following on following.following_id = playtime.user_id
+        where playtime.end_time > '{earliest_date}' and following.follower_id = {userid}
+        group by game.title order by count(game.title) desc limit 20
+    """)
+    j = cur.fetchall()
+    print("top 20 games:")
+    for i in range(0, len(j)):
+        
+        print("\t"+str(i + 1)+ ":", j[i])
+    
+# generates some recommended games based on genre
+def recommend_games(conn, cur):
+    cur.execute(f"""
+        select title, count(title) from p320_23.game join p320_23.game_genre on game_genre.game_id = game.game_id
+        join p320_23.genre on genre.genre_id = game_genre.genre_id where game_genre.genre_id in
+        (select genre_id from
+        p320_23.playtime join p320_23.game on playtime.game_id = game.game_id
+        join p320_23.game_genre on game_genre.game_id = game.game_id
+        where playtime.user_id = 9) group by title order by count(title) desc limit 15;
+    """)
+    print("Recommended based on genre: \n", cur.fetchall())
+
+def new_releases(conn, cur):
+    earliest_date = datetime.date(datetime.now() - timedelta(days = 30))
+    # popular is determined by what game has the most play sessions in the last 90 days
+    cur.execute(f"""
+        select title, count(game.title) from p320_23.game join p320_23.playtime on game.game_id = playtime.game_id
+        join p320_23.release on release.game_id = game.game_id
+        where playtime.end_time > '{earliest_date}' and release.release_date > '{earliest_date}'
+        group by release.game_id, game.title order by count(game.title) desc limit 5
+    """)
+    j = cur.fetchall()
+    print("top 5 new releases:")
+    for i in range(0, len(j)):
+        
+        print("\t"+str(i + 1)+ ":", j[i])
+
+
 # generates count random users in the database.
 import random
 import numpy
@@ -789,7 +844,24 @@ add platform <PLATFORM>
     - adds a platform to your repertiore
 remove platform <PLATFORM>
     - removes a platform from your repertoire
+popular
+    - returns the top 20 games
+popular follower
+    - returns the top 20 games among followers
+popular new
+    - returns the 5 most popular games released in the last month (if 5+ games exist)
+recommended
+    - returns the recommended games based on how many matching genres you have
 """)
+        case "popular":
+            if (len(command) > 1 and command[1] == "follower"):
+                follower_pop_games(connection, cursor)
+            elif (len(command) > 1 and command[1] == "new"):
+                new_releases(connection, cursor)
+            else:
+                most_pop_games(connection, cursor)
+        case "recommended":
+            recommend_games(connection, cursor)
         case "login":
             print(command[1])
             login(connection, cursor, command[1])
