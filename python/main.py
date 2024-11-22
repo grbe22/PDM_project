@@ -287,9 +287,10 @@ def find_game(conn, cur, args): # boy thats a lot of args
 
 # alternate update collection that takes an id instead of a name
 def a_update_collection(conn, cur, cid, gname):
-    cur.execute(f"""
-            select game_id from p320_23.game where title = '{gname}';
-        """)
+    
+    cur.execute("""
+        select game_id from p320_23.game where title = %s;
+        """, (gname,))
         # validates that game exists
     try:
         game = cur.fetchone()[0]
@@ -722,7 +723,7 @@ def genCollections(conn, cur):
     cur.execute(f"""
         select title from p320_23.game""")
     all_games = cur.fetchall()
-    
+
     for i in all_users:
         games = random.sample(all_games, 3)
         login(conn, cur, i[0])
@@ -732,7 +733,7 @@ def genCollections(conn, cur):
         # Pick a random adjective and noun
         adjective = random.choice(adjectives)
         noun = random.choice(nouns)
-        collection_name = f"{adjective} {noun}"
+        collection_name = f"{adjective}_{noun}"
         create_collection(conn, cur, collection_name, games)
         
 
@@ -853,6 +854,13 @@ remove platform <PLATFORM>
             print("User may not be logged in. Double check spelling of command or login before running other commands.")
     return
 
+def replaceSpaces(conn, cur):
+    cur.execute(f"""
+        update p320_23.game
+        set title = replace(title, ' ', '_')""")
+    conn.commit()
+    
+
 
 def main(connection, cursor, server):
     # don't run this
@@ -862,8 +870,9 @@ def main(connection, cursor, server):
     # don't run it
     # gen_random_users(connection, cursor)
     # exit()
-    genCollections(connection, cursor)
-    exit()
+    #genCollections(connection, cursor)
+    #replaceSpaces(connection, cursor)
+    #exit()
     # don't run this is over
     # run this vvv
     print(  """Welcome to our wonderful database! Login with command login <USERNAME>.\nIf username does not exist, creates a new account.
