@@ -14,8 +14,9 @@ play Minecraft 180
 	(180 minutes, ending now)
 find game developer valve
 find game publisher valve sort by price descending
-follow Axl_Rose
-unfollow Axl_Rose
+find gabe
+follow gabe
+unfollow gabe
 add platform windows
 update collection spherical add Minecraft
 remove platform windows	
